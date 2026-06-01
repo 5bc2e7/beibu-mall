@@ -46,10 +46,20 @@
             <artifactId>spring-cloud-starter-loadbalancer</artifactId>
         </dependency>
 
-        <!-- 公共模块 -->
+        <!-- 公共模块（排除 WebMVC，因为 Gateway 用的是 WebFlux，两者不能混用） -->
         <dependency>
             <groupId>com.beibu.mall</groupId>
             <artifactId>mall-common</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-web</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-validation</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 

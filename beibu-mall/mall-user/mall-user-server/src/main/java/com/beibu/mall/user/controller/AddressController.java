@@ -38,7 +38,7 @@ public class AddressController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "删除收货地址")
-    public Result<Void> deleteAddress(HttpServletRequest request, @PathVariable Long id) {
+    public Result<Void> deleteAddress(HttpServletRequest request, @PathVariable("id") Long id) {
         Long userId = (Long) request.getAttribute("userId");
         addressService.deleteAddress(userId, id);
         return Result.ok();
@@ -54,7 +54,7 @@ public class AddressController {
 
     @GetMapping("/{id}")
     @Operation(summary = "查询地址详情")
-    public Result<AddressDTO> getAddress(HttpServletRequest request, @PathVariable Long id) {
+    public Result<AddressDTO> getAddress(HttpServletRequest request, @PathVariable("id") Long id) {
         Long userId = (Long) request.getAttribute("userId");
         AddressDTO dto = addressService.getAddress(userId, id);
         return Result.ok(dto);
