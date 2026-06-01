@@ -10,7 +10,6 @@ import com.beibu.mall.user.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
-import org.springframework.util.StringUtils;
 
 /**
  * 用户服务实现类

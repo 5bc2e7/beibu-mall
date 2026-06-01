@@ -7,5 +7,26 @@ spring:
   cloud:
     nacos:
       server-addr: localhost:8848
+      username: nacos
+      password: nacos
       discovery:
         namespace: public
+      config:
+        namespace: public
+        file-extension: yaml
+    gateway:
+      routes:
+        # 用户服务路由
+        - id: user-service
+          uri: lb://user-service  # lb:// 表示从 Nacos 获取服务地址并负载均衡
+          predicates:
+            - Path=/api/user/**   # 匹配 /api/user 开头的所有请求
+        # 地址服务路由（也属于 user-service）
+        - id: address-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/address/**
+
+  config:
+    import:
+      - optional:nacos:${spring.application.name}.yaml

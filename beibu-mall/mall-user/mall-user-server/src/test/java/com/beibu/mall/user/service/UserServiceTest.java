@@ -93,7 +93,11 @@ class UserServiceTest {
     @DisplayName("注册失败 - 用户名已存在")
     void register_usernameExists() {
         // given：模拟数据库中已有同名用户
-        when(userMapper.selectCount(any(LambdaQueryWrapper.class))).thenReturn(1L);
+        // register() 会调用 selectCount 两次：先检查用户名，再检查手机号
+        // 第一次返回 1（用户名存在），第二次返回 0（手机号不存在）
+        when(userMapper.selectCount(any(LambdaQueryWrapper.class)))
+                .thenReturn(1L)   // 第一次调用：用户名检查 → 存在
+                .thenReturn(0L);  // 第二次调用：手机号检查 → 不存在
 
         // when & then：期望抛出 BizException
         BizException exception = assertThrows(BizException.class,

@@ -13,7 +13,7 @@ USE `mall_user`;
 CREATE TABLE `user` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '用户ID（主键，自增）',
     `username` VARCHAR(50) NOT NULL COMMENT '用户名（登录用，唯一）',
-    `password` VARCHAR(100) NOT NULL COMMENT '密码（BCrypt 加密后的密文，60 字符）',
+    `password` VARCHAR(100) NOT NULL COMMENT '密码（MD5 加密后的密文，32 字符十六进制）',
     `phone` VARCHAR(20) NOT NULL COMMENT '手机号',
     `nickname` VARCHAR(50) DEFAULT NULL COMMENT '昵称（显示用）',
     `avatar` VARCHAR(255) DEFAULT NULL COMMENT '头像 URL',

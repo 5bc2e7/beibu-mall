@@ -28,7 +28,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/api/user/login",       // 登录
                         "/doc.html",             // Knife4j 文档
                         "/webjars/**",           // Knife4j 静态资源
-                        "/v3/api-docs/**"        // OpenAPI 文档
+                        "/v3/api-docs/**",       // OpenAPI 文档
+                        "/swagger-resources/**", // Swagger 资源
+                        "/favicon.ico"           // 网站图标
                 );
     }
 
