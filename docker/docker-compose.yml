@@ -1,0 +1,93 @@
+# 北部湾海鲜商城 - 开发环境中间件
+# 使用方法：在 docker/ 目录下执行 docker compose up -d
+
+services:
+  # ==================== MySQL 8 ====================
+  # 作用：存储所有业务数据（用户、商品、订单等）
+  mysql:
+    image: mysql:8.0
+    container_name: mall-mysql
+    restart: always
+    ports:
+      - "3307:3306"        # 主机端口:容器端口（3306 被占用，改用 3307）
+    environment:
+      # root 密码（超级管理员，拥有所有权限）
+      MYSQL_ROOT_PASSWORD: root123456
+      # 启动时自动创建的数据库（每个微服务一个库，先创建 Nacos 需要的库）
+      MYSQL_DATABASE: nacos_config
+      # 时区设置，避免时间字段少8小时
+      TZ: Asia/Shanghai
+    volumes:
+      # 数据持久化：把容器里的 MySQL 数据目录映射到主机，容器删了数据还在
+      - mysql-data:/var/lib/mysql
+      # 初始化脚本：容器首次启动时自动执行（建 Nacos 需要的表）
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    command:
+      # MySQL 启动参数
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+    networks:
+      - mall-net
+
+  # ==================== Redis 7 ====================
+  # 作用：缓存热点数据、存储购物车、分布式锁、Session 等
+  redis:
+    image: redis:7-alpine    # alpine 版本更小，适合开发
+    container_name: mall-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass redis123456   # 设置密码
+    volumes:
+      - redis-data:/data     # 数据持久化
+    networks:
+      - mall-net
+
+  # ==================== Nacos 3.x ====================
+  # 作用：服务注册中心 + 配置中心（微服务启动时来这里"报到"并拉取配置）
+  nacos:
+    image: nacos/nacos-server:v3.2.1
+    container_name: mall-nacos
+    restart: always
+    ports:
+      - "8848:8848"    # Nacos 主端口（服务注册/配置 API）
+      - "9848:9848"    # gRPC 端口（客户端与服务端通信）
+      - "8080:8080"    # Nacos 控制台 UI（浏览器访问）
+    environment:
+      # 单机模式（开发用，不搭集群）
+      MODE: standalone
+      # 数据库配置（用上面 MySQL 里建的 nacos_config 库）
+      SPRING_DATASOURCE_PLATFORM: mysql
+      MYSQL_SERVICE_HOST: mysql       # 这里写容器名，Docker 会自动解析为内网 IP
+      MYSQL_SERVICE_PORT: 3306
+      MYSQL_SERVICE_DB_NAME: nacos_config
+      MYSQL_SERVICE_USER: root
+      MYSQL_SERVICE_PASSWORD: root123456
+      # 认证配置（开启登录验证，生产环境必须开）
+      NACOS_AUTH_ENABLE: true
+      # Nacos 3.x 必须：JWT 令牌签名密钥（Base64 编码，至少 32 字节原始内容）
+      NACOS_AUTH_TOKEN: QmVpYnVNYWxsU2VjcmV0S2V5MjAyNEZvck5hY29zQXV0aA==
+      # 服务端身份标识（Nacos 3.x 必须设置）
+      NACOS_AUTH_IDENTITY_KEY: serverIdentity
+      NACOS_AUTH_IDENTITY_VALUE: security
+      # JVM 内存（开发环境给小点，省内存）
+      JVM_XMS: 256m
+      JVM_XMX: 256m
+      JVM_XMN: 128m
+      # 时区
+      TZ: Asia/Shanghai
+    depends_on:
+      - mysql          # 确保 MySQL 先启动，Nacos 才能连上
+    networks:
+      - mall-net
+
+# 数据卷（Docker 管理的持久化存储，容器删了数据不丢）
+volumes:
+  mysql-data:
+  redis-data:
+
+# 自定义网络（所有容器在同一个网络里，可以用容器名互相访问）
+networks:
+  mall-net:
+    driver: bridge

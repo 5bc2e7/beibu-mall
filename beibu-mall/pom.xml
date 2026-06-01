@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- ==================== 父项目坐标 ==================== -->
+    <!-- groupId: 公司/组织的反向域名，类似"包名" -->
+    <!-- artifactId: 项目名称 -->
+    <!-- packaging: pom 表示这是一个"父项目"，只做版本管理，不产出代码 -->
+    <groupId>com.beibu.mall</groupId>
+    <artifactId>beibu-mall</artifactId>
+    <version>1.0.0</version>
+    <packaging>pom</packaging>
+    <name>beibu-mall</name>
+    <description>北部湾海鲜商城 - 微服务电商系统</description>
+
+    <!-- ==================== 子模块声明 ==================== -->
+    <!-- 告诉 Maven 这个父项目下有哪些子模块 -->
+    <modules>
+        <module>mall-common</module>
+        <module>mall-gateway</module>
+        <module>mall-user</module>
+    </modules>
+
+    <!-- ==================== 版本号集中管理 ==================== -->
+    <!-- 把所有版本号定义在一个地方，子模块引用 ${xxx.version} 就行 -->
+    <!-- 好处：升级版本时只改这一处，不用每个模块都改 -->
+    <properties>
+        <java.version>21</java.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- Spring 生态 -->
+        <spring-boot.version>3.5.0</spring-boot.version>
+        <spring-cloud.version>2025.0.0</spring-cloud.version>
+        <spring-cloud-alibaba.version>2025.0.0.0</spring-cloud-alibaba.version>
+
+        <!-- 数据库 -->
+        <mybatis-plus.version>3.5.16</mybatis-plus.version>
+        <mysql.version>8.0.33</mysql.version>
+
+        <!-- 工具 -->
+        <lombok.version>1.18.34</lombok.version>
+        <hutool.version>5.8.32</hutool.version>
+    </properties>
+
+    <!-- ==================== 依赖版本管理（核心） ==================== -->
+    <!-- dependencyManagement 只声明版本，不实际引入依赖 -->
+    <!-- 子模块用 <dependency> 时不用写 <version>，自动继承这里的版本 -->
+    <dependencyManagement>
+        <dependencies>
+            <!-- Spring Boot 官方 BOM（Bill of Materials，材料清单） -->
+            <!-- 它帮我们管理了 Spring Boot 所有组件的版本，避免版本冲突 -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Spring Cloud BOM：管理微服务相关组件版本 -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Spring Cloud Alibaba BOM：管理 Nacos、Sentinel 等组件版本 -->
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                <version>${spring-cloud-alibaba.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- MyBatis-Plus BOM：ORM 框架，简化数据库操作 -->
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-bom</artifactId>
+                <version>${mybatis-plus.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- ==================== 项目内部模块 ==================== -->
+            <!-- mall-common：所有服务都依赖的公共模块 -->
+            <dependency>
+                <groupId>com.beibu.mall</groupId>
+                <artifactId>mall-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- mall-user-api：用户服务的对外接口（Feign + DTO） -->
+            <!-- 其他服务要调用用户服务时，依赖这个模块 -->
+            <dependency>
+                <groupId>com.beibu.mall</groupId>
+                <artifactId>mall-user-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <!-- ==================== 全局依赖（所有子模块都会继承） ==================== -->
+    <dependencies>
+        <!-- Lombok：自动生成 getter/setter/构造方法，减少模板代码 -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>  <!-- provided = 编译时需要，运行时不需要（由 IDE 提供） -->
+        </dependency>
+    </dependencies>
+
+    <!-- ==================== 构建配置 ==================== -->
+    <build>
+        <plugins>
+            <!-- Maven 编译插件 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                    <encoding>UTF-8</encoding>
+                    <!-- Lombok 注解处理器：编译时根据 @Data 等注解生成 getter/setter -->
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

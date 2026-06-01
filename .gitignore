@@ -1,0 +1,63 @@
+# ==================== 构建产物 ====================
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# ==================== IDE ====================
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Eclipse
+.classpath
+.project
+.settings/
+bin/
+
+# VS Code
+.vscode/
+
+# ==================== Maven ====================
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# ==================== 日志 ====================
+*.log
+logs/
+
+# ==================== 操作系统 ====================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# ==================== 环境变量 / 敏感信息 ====================
+.env
+.env.local
+*.env
+
+# ==================== Docker 数据卷 ====================
+docker/mysql/data/
+docker/redis/data/
+
+# ==================== Spring Boot ====================
+spring-shell.log
+
+# ==================== Nacos 配置缓存 ====================
+nacos-*/data/
+nacos-*/logs/
+D:\\dev-tools\\maven_repository/

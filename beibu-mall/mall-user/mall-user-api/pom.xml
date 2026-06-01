@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.beibu.mall</groupId>
+        <artifactId>mall-user</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>mall-user-api</artifactId>
+    <name>mall-user-api</name>
+    <description>
+        用户服务 API 模块（对外接口）
+        - Feign 接口：定义"别人怎么调我"
+        - DTO：数据传输对象（服务间传递的数据结构）
+        - VO：视图对象（返回给前端的数据结构）
+
+        为什么单独一个模块？
+        因为其他服务（如订单服务）要调用用户服务时，
+        只需要依赖这个 api 模块，不需要依赖整个用户服务的实现代码。
+    </description>
+
+    <dependencies>
+        <!-- OpenFeign：声明式 HTTP 客户端，让调用远程服务像调用本地方法一样 -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
+        </dependency>
+
+        <!-- 公共模块（Result、BizException 等） -->
+        <dependency>
+            <groupId>com.beibu.mall</groupId>
+            <artifactId>mall-common</artifactId>
+        </dependency>
+    </dependencies>
+</project>
