@@ -54,9 +54,11 @@ mybatis-plus:
       logic-not-delete-value: 0
 
 # JWT 配置
-jwt:
-  secret: BeibuMallSecretKeyForJwt2024!@#$%^&*()_+  # 密钥（生产环境用更复杂的）
-  expiration: 86400000  # 24小时（毫秒）
+# 安全要求：必须从 Nacos 配置中心读取，不能在这里硬编码
+# jwt:
+#   secret: ${JWT_SECRET}
+#   issuer: ${JWT_ISSUER:beibu-mall}
+#   expiration: ${JWT_EXPIRATION:86400000}
 
 # Knife4j 配置
 springdoc:

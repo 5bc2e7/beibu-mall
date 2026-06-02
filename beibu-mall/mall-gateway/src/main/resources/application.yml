@@ -4,29 +4,76 @@ server:
 spring:
   application:
     name: gateway-service
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   cloud:
     nacos:
-      server-addr: localhost:8848
-      username: nacos
-      password: nacos
+      server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+      username: ${NACOS_USERNAME:nacos}
+      password: ${NACOS_PASSWORD:nacos}
       discovery:
-        namespace: public
+        namespace: ${NACOS_NAMESPACE:public}
       config:
-        namespace: public
+        namespace: ${NACOS_NAMESPACE:public}
         file-extension: yaml
+        enabled: true
     gateway:
       routes:
-        # 用户服务路由
         - id: user-service
-          uri: lb://user-service  # lb:// 表示从 Nacos 获取服务地址并负载均衡
+          uri: lb://user-service
           predicates:
-            - Path=/api/user/**   # 匹配 /api/user 开头的所有请求
-        # 地址服务路由（也属于 user-service）
+            - Path=/api/user/**
+
         - id: address-service
           uri: lb://user-service
           predicates:
             - Path=/api/address/**
 
+        - id: product-service
+          uri: lb://product-service
+          predicates:
+            - Path=/api/product/**, /api/category/**, /api/brand/**
+
+        - id: cart-service
+          uri: lb://cart-service
+          predicates:
+            - Path=/api/cart/**
+
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/order/**
+
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/payment/**
+
   config:
     import:
       - optional:nacos:${spring.application.name}.yaml
+
+# JWT 配置
+# 安全要求：必须从 Nacos 配置中心或环境变量读取密钥
+# 不要在这里硬编码密钥，否则会导致安全漏洞
+# jwt:
+#   secret: ${JWT_SECRET}  # 从环境变量读取
+
+# 网关白名单配置
+# 这些接口不需要登录就能访问
+gateway:
+  white-list:
+    urls:
+      - /api/user/login          # 用户登录
+      - /api/user/register       # 用户注册
+      - /api/user/captcha        # 验证码
+      - /api/user/forget-password # 忘记密码
+      - /api/product/list        # 商品列表（游客也能看）
+      - /api/product/detail/**   # 商品详情（游客也能看）
+      - /api/category/list       # 分类列表
+      - /api/advert/list         # 广告列表
+      # Swagger/Knife4j 文档（开发环境用）
+      - /doc.html
+      - /webjars/**
+      - /swagger-resources/**
+      - /v3/api-docs/**

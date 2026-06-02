@@ -61,6 +61,26 @@
                 </exclusion>
             </exclusions>
         </dependency>
+
+        <!-- JWT：用于生成和验证 Token（登录凭证） -->
+        <!-- JWT 就像一张"通行证"，用户登录后拿到它，每次请求带上，网关验证它是否有效 -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>0.12.6</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>0.12.6</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>0.12.6</version>
+            <scope>runtime</scope>
+        </dependency>
     </dependencies>
 
     <build>

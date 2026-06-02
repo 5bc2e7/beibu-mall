@@ -27,11 +27,20 @@ import java.util.Date;
 public class JwtUtil {
 
     /**
-     * JWT 密钥（生产环境应该从配置中心读取，且至少 256 位）
-     * HS256 算法要求密钥至少 32 字节
+     * JWT 密钥
+     * 安全要求：必须从配置中心或环境变量读取，不能使用硬编码默认值
+     * 注意：网关和用户服务必须使用相同的密钥，否则令牌验证会失败
      */
-    @Value("${jwt.secret:BeibuMallSecretKeyForJwt2024!@#$}")
+    @Value("${jwt.secret}")
     private String secret;
+
+    /**
+     * JWT 签发者
+     * 安全要求：验证 issuer 可以防止使用其他服务签发的 JWT
+     * 注意：网关和用户服务必须使用相同的 issuer
+     */
+    @Value("${jwt.issuer:beibu-mall}")
+    private String issuer;
 
     /**
      * Token 有效期（毫秒），默认 24 小时
@@ -53,6 +62,7 @@ public class JwtUtil {
         return Jwts.builder()
                 .subject(username)                    // subject（主题）：存用户名
                 .claim("userId", userId)              // 自定义字段：存用户ID
+                .issuer(issuer)                       // 签发者：用于验证令牌来源
                 .issuedAt(now)                        // 签发时间
                 .expiration(expiryDate)               // 过期时间
                 .signWith(getSecretKey())             // 用密钥签名
