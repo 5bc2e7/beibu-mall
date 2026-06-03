@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.beibu.mall</groupId>
+        <artifactId>beibu-mall</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>mall-inventory</artifactId>
+    <packaging>pom</packaging>
+    <name>mall-inventory</name>
+    <description>
+        库存服务：负责库存相关的所有业务
+        - 库存扣减（防超卖）
+        - 库存预占/释放
+        - 库存变动流水
+    </description>
+
+    <!-- 库存服务下的子模块 -->
+    <modules>
+        <module>mall-inventory-api</module>
+        <module>mall-inventory-server</module>
+    </modules>
+</project>

@@ -1,0 +1,42 @@
+# 测试环境配置
+# 使用已运行的 MySQL 容器（mall-mysql:3307）
+
+server:
+  port: 9003
+
+spring:
+  application:
+    name: inventory-service
+
+  # 数据源配置：连接已运行的 MySQL 容器
+  datasource:
+    url: jdbc:mysql://localhost:3307/mall_inventory?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: root123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # 禁用 Nacos（测试环境不需要）
+  cloud:
+    nacos:
+      discovery:
+        enabled: false
+      config:
+        enabled: false
+
+# MyBatis-Plus 配置
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: ASSIGN_ID
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# 日志配置
+logging:
+  level:
+    com.beibu.mall.inventory: debug

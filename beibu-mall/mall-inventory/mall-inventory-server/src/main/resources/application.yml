@@ -1,0 +1,67 @@
+# =============================================
+# 库存服务配置
+# =============================================
+
+server:
+  port: 9003  # 服务端口
+
+spring:
+  application:
+    name: inventory-service  # 服务名称（注册到 Nacos 时用）
+
+  # 数据源配置
+  datasource:
+    url: jdbc:mysql://localhost:3307/mall_inventory?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: root123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # Redis 配置
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: redis123456
+      database: 0
+
+  # Nacos 配置（使用 spring.config.import 写法，这是新版推荐方式）
+  cloud:
+    nacos:
+      server-addr: localhost:8848
+      username: nacos
+      password: nacos
+      discovery:
+        namespace: public
+      config:
+        namespace: public
+        file-extension: yaml
+  config:
+    import:
+      - optional:nacos:${spring.application.name}.yaml
+
+# MyBatis-Plus 配置
+mybatis-plus:
+  configuration:
+    # 开启驼峰命名自动映射（数据库 user_name → Java userName）
+    map-underscore-to-camel-case: true
+    # 开启 SQL 日志（开发环境用，生产环境关闭）
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      # 逻辑删除配置
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# Knife4j 配置
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+
+# Knife4j 增强配置
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
