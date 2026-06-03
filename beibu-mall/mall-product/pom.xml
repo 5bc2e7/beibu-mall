@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.beibu.mall</groupId>
+        <artifactId>beibu-mall</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>mall-product</artifactId>
+    <packaging>pom</packaging>
+    <name>mall-product</name>
+    <description>
+        商品服务：负责商品相关的所有业务
+        - 商品分类管理
+        - SPU/SKU 管理
+        - 商品上下架
+    </description>
+
+    <!-- 商品服务下的子模块 -->
+    <modules>
+        <module>mall-product-api</module>
+        <module>mall-product-server</module>
+    </modules>
+</project>

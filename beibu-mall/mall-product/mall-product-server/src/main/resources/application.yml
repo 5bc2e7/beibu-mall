@@ -1,0 +1,69 @@
+# ==================== 商品服务配置 ====================
+
+server:
+  port: 9002  # 商品服务端口（约定：gateway=9000, user=9001, product=9002）
+
+spring:
+  application:
+    name: product-service  # 服务名称（注册到 Nacos 时用这个名字）
+
+  # ==================== 数据源配置 ====================
+  # 商品服务连接自己的数据库 mall_product
+  # 注意：MySQL 容器映射到宿主机 3307 端口
+  datasource:
+    url: jdbc:mysql://localhost:3307/mall_product?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: root123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # ==================== Redis 配置 ====================
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  # ==================== Nacos 配置中心 ====================
+  # 新版写法：使用 spring.config.import 接入 Nacos（不要用过时的 bootstrap.yml）
+  cloud:
+    nacos:
+      server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+      username: nacos
+      password: nacos
+      discovery:
+        namespace: ${ENV:dev}  # 命名空间（dev/test/prod 环境隔离）
+      config:
+        namespace: ${ENV:dev}
+        file-extension: yaml  # 配置文件格式
+  config:
+    import:
+      - optional:nacos:${spring.application.name}.yaml  # 服务专属配置
+      - optional:nacos:common-shared.yaml  # 公共配置
+
+# ==================== MyBatis-Plus 配置 ====================
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml  # Mapper XML 文件位置（如果有的话）
+  configuration:
+    map-underscore-to-camel-case: true  # 开启驼峰命名转换（数据库 user_name → Java userName）
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl  # 打印 SQL（开发环境用，生产环境要关掉）
+  global-config:
+    db-config:
+      id-type: ASSIGN_ID  # 主键生成策略：雪花算法（分布式环境下保证唯一）
+      logic-delete-field: deleted  # 逻辑删除字段
+      logic-delete-value: 1  # 逻辑删除值（已删除）
+      logic-not-delete-value: 0  # 逻辑未删除值（未删除）
+
+# ==================== Knife4j API 文档配置 ====================
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html  # Swagger UI 路径
+  api-docs:
+    path: /v3/api-docs  # OpenAPI 文档路径
+  group-configs:
+    - group: '商品服务'
+      paths-to-match: '/api/**'
+      packages-to-scan: com.beibu.mall.product.controller
+
+# ==================== 日志配置 ====================
+logging:
+  level:
+    com.beibu.mall.product: debug  # 商品服务日志级别

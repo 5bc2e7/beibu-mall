@@ -21,6 +21,7 @@
         <module>mall-common</module>
         <module>mall-gateway</module>
         <module>mall-user</module>
+        <module>mall-product</module>
     </modules>
 
     <!-- ==================== 版本号集中管理 ==================== -->
@@ -128,6 +129,8 @@
                     <source>${java.version}</source>
                     <target>${java.version}</target>
                     <encoding>UTF-8</encoding>
+                    <!-- Spring 6 需要 -parameters 参数才能通过反射获取方法参数名 -->
+                    <parameters>true</parameters>
                     <!-- Lombok 注解处理器：编译时根据 @Data 等注解生成 getter/setter -->
                     <annotationProcessorPaths>
                         <path>

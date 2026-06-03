@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.beibu.mall</groupId>
+        <artifactId>mall-product</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>mall-product-api</artifactId>
+    <name>mall-product-api</name>
+    <description>
+        商品服务 API 模块（对外暴露的接口和 DTO）
+        - DTO/VO：数据传输对象
+        - Feign 客户端：供其他服务调用
+        其他服务依赖此模块即可调用商品服务，不需要知道具体实现
+    </description>
+
+    <dependencies>
+        <!-- 公共模块（Result、BizException） -->
+        <dependency>
+            <groupId>com.beibu.mall</groupId>
+            <artifactId>mall-common</artifactId>
+        </dependency>
+
+        <!-- OpenFeign：声明式 HTTP 调用 -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
+        </dependency>
+
+        <!-- Jakarta Validation：参数校验注解 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+    </dependencies>
+</project>
