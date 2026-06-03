@@ -24,6 +24,7 @@
         <module>mall-product</module>
         <module>mall-inventory</module>
         <module>mall-cart</module>
+        <module>mall-order</module>
     </modules>
 
     <!-- ==================== 版本号集中管理 ==================== -->
@@ -121,6 +122,20 @@
                 <groupId>com.beibu.mall</groupId>
                 <artifactId>mall-product-api</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+
+            <!-- mall-order-api：订单服务的对外接口（Feign + DTO） -->
+            <dependency>
+                <groupId>com.beibu.mall</groupId>
+                <artifactId>mall-order-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- Hutool：Java 工具库 -->
+            <dependency>
+                <groupId>cn.hutool</groupId>
+                <artifactId>hutool-all</artifactId>
+                <version>${hutool.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
