@@ -26,6 +26,13 @@ public class SkuController {
 
     private final SkuService skuService;
 
+    @GetMapping("/{id}")
+    @Operation(summary = "SKU 详情", description = "根据 SKU ID 查询单个 SKU 信息")
+    public Result<SkuVO> getSkuById(@PathVariable Long id) {
+        SkuVO sku = skuService.getSkuById(id);
+        return Result.ok(sku);
+    }
+
     @GetMapping("/list")
     @Operation(summary = "SKU 列表", description = "获取指定 SPU 下的所有 SKU")
     public Result<List<SkuVO>> listSkuBySpuId(@RequestParam Long spuId) {

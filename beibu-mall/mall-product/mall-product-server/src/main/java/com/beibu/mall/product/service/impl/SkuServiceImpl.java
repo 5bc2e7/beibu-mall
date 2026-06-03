@@ -29,6 +29,25 @@ public class SkuServiceImpl implements SkuService {
     private final SkuMapper skuMapper;
     private final SpuMapper spuMapper;
 
+    @Override
+    public SkuVO getSkuById(Long skuId) {
+        Sku sku = skuMapper.selectById(skuId);
+        if (sku == null) {
+            return null;
+        }
+
+        SkuVO vo = new SkuVO();
+        vo.setId(sku.getId());
+        vo.setSpuId(sku.getSpuId());
+        vo.setSpec(sku.getSpec());
+        vo.setPrice(sku.getPrice());
+        vo.setUnit(sku.getUnit());
+        vo.setStock(sku.getStock());
+        vo.setImg(sku.getImg());
+        vo.setStatus(sku.getStatus());
+        return vo;
+    }
+
     /**
      * 获取 SPU 下的所有 SKU
      *

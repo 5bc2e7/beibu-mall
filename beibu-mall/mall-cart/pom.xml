@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.beibu.mall</groupId>
+        <artifactId>beibu-mall</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>mall-cart</artifactId>
+    <packaging>pom</packaging>
+    <name>mall-cart</name>
+    <description>
+        购物车服务：负责用户的购物车管理
+        - 加入购物车
+        - 修改商品数量
+        - 删除商品
+        - 查看购物车列表（通过 Feign 调用商品服务补全商品信息）
+        数据存储在 Redis 中（Hash 结构）
+    </description>
+
+    <modules>
+        <module>mall-cart-server</module>
+    </modules>
+</project>

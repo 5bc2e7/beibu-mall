@@ -1,0 +1,51 @@
+# ==================== 购物车服务配置 ====================
+
+server:
+  port: 9004  # 购物车服务端口
+
+spring:
+  application:
+    name: cart-service  # 服务名称（注册到 Nacos 时用这个名字）
+
+  # ==================== Redis 配置 ====================
+  # 购物车数据存在 Redis 中，不需要 MySQL
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      # 如果 Redis 设置了密码，取消下面的注释
+      # password: your-redis-password
+
+  # ==================== Nacos 配置中心 ====================
+  # 新版写法：使用 spring.config.import 接入 Nacos（不要用过时的 bootstrap.yml）
+  cloud:
+    nacos:
+      server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+      username: nacos
+      password: nacos
+      discovery:
+        namespace: ${ENV:dev}  # 命名空间（dev/test/prod 环境隔离）
+      config:
+        namespace: ${ENV:dev}
+        file-extension: yaml
+  config:
+    import:
+      - optional:nacos:${spring.application.name}.yaml  # 服务专属配置
+      - optional:nacos:common-shared.yaml  # 公共配置
+
+# ==================== Knife4j API 文档配置 ====================
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: '购物车服务'
+      paths-to-match: '/api/**'
+      packages-to-scan: com.beibu.mall.cart.controller
+
+# ==================== 日志配置 ====================
+logging:
+  level:
+    com.beibu.mall.cart: debug  # 购物车服务日志级别
+    com.beibu.mall.product.api.feign: debug  # Feign 调用日志（看请求详情）

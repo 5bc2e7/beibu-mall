@@ -31,7 +31,8 @@ import java.util.List;
  * 2. 在启动类上添加 @EnableFeignClients
  * 3. 注入 ProductFeignClient 即可使用
  */
-@FeignClient(name = "product-service", path = "/api/product")
+@FeignClient(name = "product-service", path = "/api/product",
+    fallbackFactory = ProductFeignClientFallbackFactory.class)
 public interface ProductFeignClient {
 
     /**
@@ -41,6 +42,13 @@ public interface ProductFeignClient {
      */
     @GetMapping("/spu/{id}")
     Result<SpuDetailVO> getSpuDetail(@PathVariable("id") Long spuId);
+
+    /**
+     * 根据 SKU ID 查询单个 SKU
+     * 购物车服务调用此接口获取商品名称、价格、图片等信息
+     */
+    @GetMapping("/sku/{id}")
+    Result<SkuVO> getSkuById(@PathVariable("id") Long skuId);
 
     /**
      * 查询 SPU 下的所有 SKU

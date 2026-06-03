@@ -23,6 +23,7 @@
         <module>mall-user</module>
         <module>mall-product</module>
         <module>mall-inventory</module>
+        <module>mall-cart</module>
     </modules>
 
     <!-- ==================== 版本号集中管理 ==================== -->
@@ -111,6 +112,14 @@
             <dependency>
                 <groupId>com.beibu.mall</groupId>
                 <artifactId>mall-inventory-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- mall-product-api：商品服务的对外接口（Feign + DTO） -->
+            <!-- 购物车服务需要调用商品服务查询 SKU 信息 -->
+            <dependency>
+                <groupId>com.beibu.mall</groupId>
+                <artifactId>mall-product-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

@@ -31,6 +31,11 @@ public class ProductFeignClientFallbackFactory implements FallbackFactory<Produc
             }
 
             @Override
+            public Result<SkuVO> getSkuById(Long skuId) {
+                return Result.fail(500, "商品服务暂时不可用，请稍后重试");
+            }
+
+            @Override
             public Result<List<SkuVO>> listSkuBySpuId(Long spuId) {
                 return Result.fail(500, "商品服务暂时不可用，请稍后重试");
             }
