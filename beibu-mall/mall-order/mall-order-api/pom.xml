@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.beibu.mall</groupId>
+        <artifactId>mall-order</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>mall-order-api</artifactId>
+    <name>mall-order-api</name>
+    <description>
+        订单服务 API 模块：存放对外暴露的接口
+        - Feign 客户端接口（让其他服务调用订单服务）
+        - DTO（数据传输对象，服务间传递数据用的"快递包裹"）
+        - VO（视图对象，返回给前端用的"展示包裹"）
+    </description>
+
+    <dependencies>
+        <!-- OpenFeign：声明式 HTTP 客户端，让我们像调用本地方法一样调用远程服务 -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
+        </dependency>
+
+        <!-- LoadBalancer：客户端负载均衡，自动选择服务实例 -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
+        </dependency>
+
+        <!-- Validation：参数校验注解（@NotNull, @NotBlank 等） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+        <!-- Hutool：Java 工具库，提供各种便捷工具类 -->
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+        </dependency>
+    </dependencies>
+</project>

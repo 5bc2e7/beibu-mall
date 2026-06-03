@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.beibu.mall</groupId>
+        <artifactId>beibu-mall</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>mall-order</artifactId>
+    <packaging>pom</packaging>
+    <name>mall-order</name>
+    <description>
+        订单服务：负责订单相关的所有业务
+        - 下单（创建订单）
+        - 订单查询（我的订单、订单详情）
+        - 取消订单
+        - 订单状态管理
+    </description>
+
+    <!-- 订单服务下的子模块 -->
+    <modules>
+        <module>mall-order-api</module>
+        <module>mall-order-server</module>
+    </modules>
+</project>
