@@ -3,6 +3,8 @@ package com.beibu.mall.order.entity;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.util.List;
+
 /**
  * 订单状态枚举
  *
@@ -43,7 +45,8 @@ public enum OrderStatus {
      * 根据状态码获取枚举
      *
      * @param code 状态码
-     * @return 对应的枚举，如果不存在返回 null
+     * @return 对应的枚举
+     * @throws IllegalArgumentException 如果状态码无效
      */
     public static OrderStatus fromCode(int code) {
         for (OrderStatus status : values()) {
@@ -51,7 +54,7 @@ public enum OrderStatus {
                 return status;
             }
         }
-        return null;
+        throw new IllegalArgumentException("未知的订单状态码：" + code);
     }
 
     /**
@@ -68,5 +71,72 @@ public enum OrderStatus {
      */
     public boolean isFinal() {
         return this == COMPLETED || this == CANCELLED || this == REFUNDED;
+    }
+
+    /**
+     * 判断是否可以支付
+     * 只有待支付状态的订单才能支付
+     */
+    public boolean canPay() {
+        return this == PENDING_PAYMENT;
+    }
+
+    /**
+     * 判断是否可以发货
+     * 只有已支付状态的订单才能发货
+     */
+    public boolean canDeliver() {
+        return this == PAID;
+    }
+
+    /**
+     * 判断是否可以确认收货
+     * 只有已发货状态的订单才能确认收货
+     */
+    public boolean canComplete() {
+        return this == DELIVERED;
+    }
+
+    /**
+     * 判断是否可以退款
+     * 只有已支付或已发货状态的订单才能退款
+     */
+    public boolean canRefund() {
+        return this == PAID || this == DELIVERED;
+    }
+
+    /**
+     * 校验状态流转是否合法
+     *
+     * @param targetStatus 目标状态
+     * @return true 合法，false 不合法
+     */
+    public boolean canTransitionTo(OrderStatus targetStatus) {
+        // 终态不能变更为任何状态
+        if (this.isFinal()) {
+            return false;
+        }
+
+        // 根据当前状态和目标状态判断是否允许流转
+        return switch (this) {
+            case PENDING_PAYMENT -> targetStatus == PAID || targetStatus == CANCELLED;
+            case PAID -> targetStatus == DELIVERED || targetStatus == REFUNDED;
+            case DELIVERED -> targetStatus == COMPLETED || targetStatus == REFUNDED;
+            default -> false;
+        };
+    }
+
+    /**
+     * 获取允许流转到的状态列表
+     *
+     * @return 允许的状态列表
+     */
+    public List<OrderStatus> getAllowedTransitions() {
+        return switch (this) {
+            case PENDING_PAYMENT -> List.of(PAID, CANCELLED);
+            case PAID -> List.of(DELIVERED, REFUNDED);
+            case DELIVERED -> List.of(COMPLETED, REFUNDED);
+            default -> List.of(); // 终态不允许流转
+        };
     }
 }

@@ -67,4 +67,32 @@ public interface OrderService {
      * @param reason 取消原因（可选）
      */
     void cancelOrder(Long orderId, Long userId, String reason);
+
+    /**
+     * 处理支付成功
+     *
+     * 业务流程：
+     * 1. 校验订单存在且状态为待支付
+     * 2. 更新订单状态为已支付，记录支付时间
+     * 3. 调用库存服务确认扣减（预占转实扣）
+     *
+     * @param orderNo 业务订单号
+     * @param paymentId 支付单ID
+     * @param amount 支付金额
+     * @param paymentTime 支付时间
+     */
+    void handlePaymentSuccess(String orderNo, Long paymentId,
+                              java.math.BigDecimal amount, java.time.LocalDateTime paymentTime);
+
+    /**
+     * 取消超时未支付订单
+     *
+     * 业务流程：
+     * 1. 查询订单状态
+     * 2. 如果订单仍然是"待支付"状态，则取消订单
+     * 3. 释放预占库存
+     *
+     * @param orderNo 业务订单号
+     */
+    void cancelTimeoutOrder(String orderNo);
 }

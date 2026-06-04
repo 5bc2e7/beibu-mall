@@ -17,7 +17,9 @@ import com.beibu.mall.order.entity.OrderItem;
 import com.beibu.mall.order.entity.OrderStatus;
 import com.beibu.mall.order.mapper.OrderInfoMapper;
 import com.beibu.mall.order.mapper.OrderItemMapper;
+import com.beibu.mall.order.mq.OrderDelayProducer;
 import com.beibu.mall.order.service.OrderService;
+import com.beibu.mall.order.service.OrderTransactionService;
 import com.beibu.mall.product.api.dto.SkuVO;
 import com.beibu.mall.product.api.feign.ProductFeignClient;
 import lombok.RequiredArgsConstructor;
@@ -46,6 +48,8 @@ public class OrderServiceImpl implements OrderService {
     private final SnowflakeIdGenerator snowflakeIdGenerator;
     private final StringRedisTemplate stringRedisTemplate;
     private final TransactionTemplate transactionTemplate;
+    private final OrderDelayProducer orderDelayProducer;
+    private final OrderTransactionService orderTransactionService;
 
     /**
      * 生成幂等键（基于请求内容哈希）
@@ -185,6 +189,10 @@ public class OrderServiceImpl implements OrderService {
         }
 
         log.info("订单创建成功，订单号：{}，总金额：{}", orderNo, totalAmount);
+
+        // 发送延时消息，30分钟后检查订单是否超时未支付
+        orderDelayProducer.sendOrderDelayMessage(orderNo);
+
         return buildOrderVO(orderInfo, orderItems);
     }
 
@@ -256,7 +264,7 @@ public class OrderServiceImpl implements OrderService {
                 throw new BizException(40008, "订单状态异常");
             }
             OrderStatus orderStatus = OrderStatus.fromCode(statusCode);
-            if (orderStatus == null || !orderStatus.canCancel()) {
+            if (!orderStatus.canCancel()) {
                 throw new BizException(40006, "当前订单状态不允许取消");
             }
 
@@ -304,6 +312,110 @@ public class OrderServiceImpl implements OrderService {
         log.info("订单取消完成，订单号：{}，原因：{}", orderInfo.getOrderNo(), reason);
     }
 
+    @Override
+    public void handlePaymentSuccess(String orderNo, Long paymentId,
+                                     BigDecimal amount, LocalDateTime paymentTime) {
+        log.info("处理支付成功，订单号：{}，支付单ID：{}，金额：{}", orderNo, paymentId, amount);
+
+        // 1. 事务内：更新订单状态为已支付（通过 OrderTransactionService 避免自调用问题）
+        orderTransactionService.updateOrderToPaid(orderNo, paymentTime);
+
+        // 2. 事务外：调用库存服务确认扣减（预占转实扣）
+        // 即使库存确认失败，订单状态已更新，由补偿任务重试
+        List<OrderItem> items = orderTransactionService.getOrderItems(orderNo);
+
+        boolean allConfirmed = true;
+        for (OrderItem item : items) {
+            try {
+                StockOperationDTO stockDTO = new StockOperationDTO();
+                stockDTO.setSkuId(String.valueOf(item.getSkuId()));
+                stockDTO.setQuantity(item.getQuantity());
+                stockDTO.setOrderId(orderNo);
+
+                Result<Void> stockResult = inventoryFeignClient.confirmDeduct(stockDTO);
+                if (stockResult == null || stockResult.getCode() != 200) {
+                    String msg = stockResult != null ? stockResult.getMsg() : "库存服务异常";
+                    log.error("确认扣减库存失败，SKU：{}，订单号：{}，原因：{}", item.getSkuId(), orderNo, msg);
+                    allConfirmed = false;
+                }
+            } catch (Exception e) {
+                log.error("确认扣减库存异常，SKU：{}，订单号：{}", item.getSkuId(), orderNo, e);
+                allConfirmed = false;
+            }
+        }
+
+        if (allConfirmed) {
+            log.info("支付成功处理完成，订单号：{}，库存已确认扣减", orderNo);
+        } else {
+            log.warn("支付成功处理完成，但部分库存确认失败，将由补偿任务重试，订单号：{}", orderNo);
+        }
+    }
+
+    @Override
+    public void cancelTimeoutOrder(String orderNo) {
+        log.info("检查订单超时，订单号：{}", orderNo);
+
+        // 1. 查询订单并校验状态
+        OrderInfo orderInfo = orderInfoMapper.selectOne(
+                new LambdaQueryWrapper<OrderInfo>().eq(OrderInfo::getOrderNo, orderNo)
+        );
+        if (orderInfo == null) {
+            log.warn("订单不存在，订单号：{}", orderNo);
+            return;
+        }
+
+        Integer statusCode = orderInfo.getStatus();
+        if (statusCode == null) {
+            log.warn("订单状态异常，订单号：{}", orderNo);
+            return;
+        }
+        OrderStatus currentStatus;
+        try {
+            currentStatus = OrderStatus.fromCode(statusCode);
+        } catch (IllegalArgumentException e) {
+            log.warn("订单状态未知，订单号：{}，状态码：{}", orderNo, statusCode);
+            return;
+        }
+
+        if (currentStatus != OrderStatus.PENDING_PAYMENT) {
+            log.info("订单已不是待支付状态，无需取消，订单号：{}，当前状态：{}", orderNo, currentStatus.getDesc());
+            return;
+        }
+
+        // 2. 事务内：更新订单状态为已取消（通过 OrderTransactionService 避免自调用问题）
+        orderTransactionService.updateOrderToCancelled(orderNo, "超时未支付自动取消");
+
+        // 3. 事务外：释放预占库存
+        // 即使库存释放失败，订单已取消，补偿任务会重试
+        List<OrderItem> items = orderTransactionService.getOrderItems(orderNo);
+
+        boolean allReleased = true;
+        for (OrderItem item : items) {
+            try {
+                StockOperationDTO stockDTO = new StockOperationDTO();
+                stockDTO.setSkuId(String.valueOf(item.getSkuId()));
+                stockDTO.setQuantity(item.getQuantity());
+                stockDTO.setOrderId(orderNo);
+
+                Result<Void> stockResult = inventoryFeignClient.releaseStock(stockDTO);
+                if (stockResult == null || stockResult.getCode() != 200) {
+                    String msg = stockResult != null ? stockResult.getMsg() : "库存服务异常";
+                    log.warn("释放库存失败，SKU：{}，订单号：{}，原因：{}", item.getSkuId(), orderNo, msg);
+                    allReleased = false;
+                }
+            } catch (Exception e) {
+                log.error("释放库存异常，SKU：{}，订单号：{}", item.getSkuId(), orderNo, e);
+                allReleased = false;
+            }
+        }
+
+        if (allReleased) {
+            log.info("订单超时取消完成，库存已全部释放，订单号：{}", orderNo);
+        } else {
+            log.warn("订单超时取消完成，但部分库存释放失败，将由补偿任务重试，订单号：{}", orderNo);
+        }
+    }
+
     private OrderVO buildOrderVO(OrderInfo orderInfo, List<OrderItem> items) {
         OrderVO vo = new OrderVO();
         BeanUtil.copyProperties(orderInfo, vo);
@@ -317,10 +429,16 @@ public class OrderServiceImpl implements OrderService {
                 StrUtil.nullToEmpty(orderInfo.getReceiverDetail()));
         vo.setFullAddress(fullAddress);
 
-        // 新I2: null 检查
         Integer statusCode = orderInfo.getStatus();
-        OrderStatus status = statusCode != null ? OrderStatus.fromCode(statusCode) : null;
-        vo.setStatusDesc(status != null ? status.getDesc() : "未知");
+        String statusDesc = "未知";
+        if (statusCode != null) {
+            try {
+                statusDesc = OrderStatus.fromCode(statusCode).getDesc();
+            } catch (IllegalArgumentException e) {
+                log.warn("未知的订单状态码：{}", statusCode);
+            }
+        }
+        vo.setStatusDesc(statusDesc);
 
         List<OrderVO.OrderItemVO> itemVOs = items.stream()
                 .map(item -> {

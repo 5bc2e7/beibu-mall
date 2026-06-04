@@ -31,11 +31,13 @@ spring:
         server-addr: ${NACOS_ADDR:127.0.0.1:8848}
         username: nacos
         password: nacos
+        namespace: ${ENV:dev}
       config:
         server-addr: ${NACOS_ADDR:127.0.0.1:8848}
         username: nacos
         password: nacos
         file-extension: yaml
+        namespace: ${ENV:dev}
   config:
     import:
       - optional:nacos:${spring.application.name}.yaml
@@ -65,7 +67,7 @@ knife4j:
 
 # Seata 分布式事务配置（Nacos 注册）
 seata:
-  enabled: true
+  enabled: false
   application-id: ${spring.application.name}
   tx-service-group: beibu-mall-tx-group
   service:

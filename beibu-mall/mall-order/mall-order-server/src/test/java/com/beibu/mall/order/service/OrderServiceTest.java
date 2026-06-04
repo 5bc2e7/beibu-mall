@@ -11,6 +11,7 @@ import com.beibu.mall.order.entity.OrderInfo;
 import com.beibu.mall.order.entity.OrderItem;
 import com.beibu.mall.order.mapper.OrderInfoMapper;
 import com.beibu.mall.order.mapper.OrderItemMapper;
+import com.beibu.mall.order.mq.OrderDelayProducer;
 import com.beibu.mall.order.service.impl.OrderServiceImpl;
 import com.beibu.mall.product.api.dto.SkuVO;
 import com.beibu.mall.product.api.feign.ProductFeignClient;
@@ -82,6 +83,9 @@ class OrderServiceTest {
 
     @Mock
     private TransactionTemplate transactionTemplate;
+
+    @Mock
+    private OrderDelayProducer orderDelayProducer;
 
     /**
      * @InjectMocks：创建真实的 Service 对象，并把上面的 Mock 对象注入进去
@@ -197,6 +201,9 @@ class OrderServiceTest {
 
         // 验证保存了订单明细
         verify(orderItemMapper, times(1)).insert(any(OrderItem.class));
+
+        // 验证发送了延时消息
+        verify(orderDelayProducer).sendOrderDelayMessage(anyString());
     }
 
     /**

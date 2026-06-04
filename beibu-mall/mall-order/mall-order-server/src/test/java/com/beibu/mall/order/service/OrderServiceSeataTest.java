@@ -11,6 +11,7 @@ import com.beibu.mall.order.entity.OrderInfo;
 import com.beibu.mall.order.entity.OrderItem;
 import com.beibu.mall.order.mapper.OrderInfoMapper;
 import com.beibu.mall.order.mapper.OrderItemMapper;
+import com.beibu.mall.order.mq.OrderDelayProducer;
 import com.beibu.mall.order.service.impl.OrderServiceImpl;
 import com.beibu.mall.product.api.dto.SkuVO;
 import com.beibu.mall.product.api.feign.ProductFeignClient;
@@ -67,6 +68,9 @@ class OrderServiceSeataTest {
 
     @Mock
     private ValueOperations<String, String> valueOperations;
+
+    @Mock
+    private OrderDelayProducer orderDelayProducer;
 
     @InjectMocks
     private OrderServiceImpl orderService;

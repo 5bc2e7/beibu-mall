@@ -10,11 +10,13 @@ spring:
         server-addr: ${NACOS_ADDR:127.0.0.1:8848}
         username: nacos
         password: nacos
+        namespace: ${ENV:dev}
       config:
         server-addr: ${NACOS_ADDR:127.0.0.1:8848}
         username: nacos
         password: nacos
         file-extension: yml
+        namespace: ${ENV:dev}
   config:
     import:
       - optional:nacos:order-service.yml
@@ -46,9 +48,16 @@ spring:
     serialization:
       write-dates-as-timestamps: false
 
+# RocketMQ 配置
+rocketmq:
+  name-server: ${ROCKETMQ_NAMESRV:127.0.0.1:9876}
+  producer:
+    group: order-producer-group
+    send-message-timeout: 3000
+
 # Seata 分布式事务配置（Nacos 注册）
 seata:
-  enabled: true
+  enabled: false
   application-id: ${spring.application.name}
   tx-service-group: beibu-mall-tx-group
   service:

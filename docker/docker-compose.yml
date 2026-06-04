@@ -82,6 +82,40 @@ services:
     networks:
       - mall-net
 
+  # ==================== RocketMQ NameServer ====================
+  # 作用：消息队列的名称服务，生产者和消费者通过它找到 Broker
+  rocketmq-namesrv:
+    image: apache/rocketmq:5.3.1
+    container_name: mall-rocketmq-namesrv
+    restart: always
+    ports:
+      - "9876:9876"
+    command: sh mqnamesrv
+    environment:
+      TZ: Asia/Shanghai
+    networks:
+      - mall-net
+
+  # ==================== RocketMQ Broker ====================
+  # 作用：消息队列的核心，存储和转发消息
+  rocketmq-broker:
+    image: apache/rocketmq:5.3.1
+    container_name: mall-rocketmq-broker
+    restart: always
+    ports:
+      - "10911:10911"
+      - "10909:10909"
+    command: sh mqbroker -c /home/rocketmq/rocketmq-5.3.1/conf/broker.conf
+    environment:
+      NAMESRV_ADDR: rocketmq-namesrv:9876
+      TZ: Asia/Shanghai
+    volumes:
+      - ./rocketmq/broker.conf:/home/rocketmq/rocketmq-5.3.1/conf/broker.conf
+    depends_on:
+      - rocketmq-namesrv
+    networks:
+      - mall-net
+
 # 数据卷（Docker 管理的持久化存储，容器删了数据不丢）
 volumes:
   mysql-data:
