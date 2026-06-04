@@ -16,14 +16,22 @@ import com.beibu.mall.product.mapper.SpuMapper;
 import com.beibu.mall.product.service.SkuService;
 import com.beibu.mall.product.service.SpuService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -34,6 +42,7 @@ import java.util.stream.Collectors;
  *
  * 这个类负责商品的增删改查和上下架操作。
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SpuServiceImpl implements SpuService {
@@ -41,6 +50,27 @@ public class SpuServiceImpl implements SpuService {
     private final SpuMapper spuMapper;
     private final SkuService skuService;
     private final CategoryMapper categoryMapper;
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final RedissonClient redissonClient;
+
+    /** 缓存 key 前缀 */
+    private static final String CACHE_KEY_PREFIX = "product:spu:detail:";
+
+    /** 缓存空值的标记（防穿透用） */
+    private static final String NULL_PLACEHOLDER = "__NULL__";
+
+    /** 基础过期时间（分钟） */
+    private static final int BASE_EXPIRE_MINUTES = 30;
+
+    /** 随机过期时间范围（分钟）— 防雪崩用 */
+    private static final int RANDOM_EXPIRE_RANGE = 10;
+
+    /**
+     * 构建缓存 key
+     */
+    private String buildCacheKey(Long spuId) {
+        return CACHE_KEY_PREFIX + spuId;
+    }
 
     /**
      * 商品列表分页查询
@@ -96,17 +126,124 @@ public class SpuServiceImpl implements SpuService {
     }
 
     /**
-     * 获取商品详情（含所有 SKU）
+     * 获取商品详情（含所有 SKU）— 带缓存
      *
-     * 实现思路：
-     * 1. 根据 spuId 查询 SPU 信息
-     * 2. 查询该 SPU 下的所有 SKU
-     * 3. 组装成 SpuDetailVO 返回
+     * 缓存策略：Cache-Aside Pattern（旁路缓存）
+     * 1. 先查 Redis 缓存
+     * 2. 缓存没有 → 加分布式锁 → 再查一次缓存（双重检查）→ 还没有才查数据库
+     * 3. 查到数据写回 Redis，查不到也缓存空值（防穿透）
+     * 4. 过期时间加随机值（防雪崩）
      */
     @Override
     public SpuDetailVO getSpuDetail(Long spuId) {
+        String cacheKey = buildCacheKey(spuId);
+
+        // ========== 第1步：查缓存 ==========
+        Object cached = redisTemplate.opsForValue().get(cacheKey);
+
+        if (cached != null) {
+            // 缓存命中
+            if (NULL_PLACEHOLDER.equals(cached)) {
+                // 命中的是空值标记 → 说明之前查过，数据库确实没有这个商品
+                throw new BizException(40004, "商品不存在");
+            }
+            if (cached instanceof SpuDetailVO vo) {
+                // 命中真实数据 → 直接返回，不查数据库
+                log.debug("缓存命中: spuId={}", spuId);
+                return vo;
+            }
+            // 类型不匹配（缓存数据损坏）→ 删掉脏数据，继续查数据库
+            log.warn("缓存类型异常，删除脏数据: spuId={}, type={}", spuId, cached.getClass().getSimpleName());
+            redisTemplate.delete(cacheKey);
+        }
+
+        // ========== 第2步：缓存未命中，加分布式锁（防击穿） ==========
+        // 锁的 key 按商品 ID 细分，不同商品之间不互斥
+        String lockKey = "lock:spu:detail:" + spuId;
+        RLock lock = redissonClient.getLock(lockKey);
+
+        boolean locked = false;
+        try {
+            // tryLock(等待时间, 锁持有时间, 时间单位)
+            // 等待 5 秒：最多等 5 秒获取锁，获取不到就放弃
+            // 锁持有 10 秒：防止持锁进程崩溃导致死锁
+            locked = lock.tryLock(5, 10, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            // 线程被中断（比如服务关闭）→ 恢复中断标志，降级查数据库
+            Thread.currentThread().interrupt();
+            log.warn("获取锁被中断，降级查数据库: spuId={}", spuId);
+            return loadAndCacheSpuDetail(spuId, cacheKey);
+        }
+
+        if (!locked) {
+            // 获取锁失败：说明有其他线程正在重建缓存
+            // 降级策略：直接查数据库（牺牲一点一致性，保证可用性）
+            log.warn("获取锁失败，降级查数据库: spuId={}", spuId);
+            return loadAndCacheSpuDetail(spuId, cacheKey);
+        }
+
+        try {
+
+            // 【双重检查】加锁后再查一次缓存
+            // 为什么？因为可能在你等锁的时候，别的请求已经把缓存重建好了
+            cached = redisTemplate.opsForValue().get(cacheKey);
+            if (cached != null) {
+                if (NULL_PLACEHOLDER.equals(cached)) {
+                    throw new BizException(40004, "商品不存在");
+                }
+                if (cached instanceof SpuDetailVO vo) {
+                    log.debug("锁内缓存命中: spuId={}", spuId);
+                    return vo;
+                }
+                // 类型不匹配 → 删除脏数据，继续查数据库重建
+                log.warn("锁内缓存类型异常，删除脏数据: spuId={}", spuId);
+                redisTemplate.delete(cacheKey);
+            }
+
+            // ========== 第3步：缓存真的没有，查数据库 ==========
+            log.debug("缓存未命中，查数据库: spuId={}", spuId);
+            SpuDetailVO vo = loadSpuDetailFromDB(spuId);
+
+            // 写回缓存，过期时间 = 基础时间 + 随机值（防雪崩）
+            int randomMinutes = ThreadLocalRandom.current().nextInt(RANDOM_EXPIRE_RANGE);
+            long expireMinutes = BASE_EXPIRE_MINUTES + randomMinutes;
+            redisTemplate.opsForValue().set(cacheKey, vo, expireMinutes, TimeUnit.MINUTES);
+
+            return vo;
+
+        } finally {
+            // 释放锁（必须在 finally 里，防止异常时锁没释放导致死锁）
+            // 只释放自己持有的锁，防止误释放别人的锁
+            if (locked && lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
+        }
+    }
+
+    /**
+     * 从数据库加载商品详情并缓存（降级路径用）
+     */
+    private SpuDetailVO loadAndCacheSpuDetail(Long spuId, String cacheKey) {
+        SpuDetailVO vo = loadSpuDetailFromDB(spuId);
+        // 降级路径也要缓存结果，避免持续击穿数据库
+        int randomMinutes = ThreadLocalRandom.current().nextInt(RANDOM_EXPIRE_RANGE);
+        long expireMinutes = BASE_EXPIRE_MINUTES + randomMinutes;
+        redisTemplate.opsForValue().set(cacheKey, vo, expireMinutes, TimeUnit.MINUTES);
+        return vo;
+    }
+
+    /**
+     * 从数据库加载商品详情（原逻辑，无缓存）
+     *
+     * 查不到时会缓存一个空值标记，防止缓存穿透。
+     */
+    private SpuDetailVO loadSpuDetailFromDB(Long spuId) {
         Spu spu = spuMapper.selectById(spuId);
         if (spu == null) {
+            // 防穿透：查不到的数据也缓存一个空值，设短过期时间（2分钟）
+            // 这样下次再查同一个不存在的 ID，直接从 Redis 返回，不打数据库
+            String cacheKey = buildCacheKey(spuId);
+            redisTemplate.opsForValue().set(cacheKey, NULL_PLACEHOLDER, 2, TimeUnit.MINUTES);
             throw new BizException(40004, "商品不存在");
         }
 
@@ -160,9 +297,7 @@ public class SpuServiceImpl implements SpuService {
     /**
      * 修改商品
      *
-     * 实现思路：
-     * 1. 检查商品是否存在
-     * 2. 更新商品信息
+     * 数据变了，必须删掉缓存，否则用户看到的还是旧数据。
      */
     @Override
     @Transactional
@@ -203,12 +338,15 @@ public class SpuServiceImpl implements SpuService {
         }
 
         spuMapper.updateById(spu);
+
+        // 事务提交后再删缓存（防止事务回滚时缓存已被删除）
+        evictSpuCacheAfterCommit(dto.getId());
     }
 
     /**
      * 上架商品
      *
-     * 只有下架状态的商品才能上架。
+     * 状态变了，也要删缓存。
      */
     @Override
     @Transactional
@@ -224,12 +362,15 @@ public class SpuServiceImpl implements SpuService {
 
         spu.setStatus(1);
         spuMapper.updateById(spu);
+
+        // 事务提交后再删缓存
+        evictSpuCacheAfterCommit(spuId);
     }
 
     /**
      * 下架商品
      *
-     * 只有上架状态的商品才能下架。
+     * 状态变了，也要删缓存。
      */
     @Override
     @Transactional
@@ -245,6 +386,39 @@ public class SpuServiceImpl implements SpuService {
 
         spu.setStatus(0);
         spuMapper.updateById(spu);
+
+        // 事务提交后再删缓存
+        evictSpuCacheAfterCommit(spuId);
+    }
+
+    /**
+     * 事务提交后再删除缓存
+     *
+     * 为什么不在事务内删缓存？
+     * 如果事务回滚，缓存已经被删了，下次读取会加载旧数据到缓存。
+     * 用 TransactionSynchronization 保证只有事务成功提交后才删缓存。
+     */
+    private void evictSpuCacheAfterCommit(Long spuId) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    evictSpuCache(spuId);
+                }
+            });
+        } else {
+            // 没有事务（比如测试环境），直接删
+            evictSpuCache(spuId);
+        }
+    }
+
+    /**
+     * 删除指定商品的缓存
+     */
+    private void evictSpuCache(Long spuId) {
+        String cacheKey = buildCacheKey(spuId);
+        redisTemplate.delete(cacheKey);
+        log.debug("缓存已删除: spuId={}", spuId);
     }
 
     private Map<Long, String> getCategoryNameMap(Set<Long> categoryIds) {
