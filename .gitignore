@@ -53,6 +53,7 @@ Desktop.ini
 # ==================== Docker 数据卷 ====================
 docker/mysql/data/
 docker/redis/data/
+.data/
 
 # ==================== Spring Boot ====================
 spring-shell.log

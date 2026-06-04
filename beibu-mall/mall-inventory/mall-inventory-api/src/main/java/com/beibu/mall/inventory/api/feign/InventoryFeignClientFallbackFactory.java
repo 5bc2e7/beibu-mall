@@ -1,5 +1,6 @@
 package com.beibu.mall.inventory.api.feign;
 
+import com.beibu.mall.common.exception.BizException;
 import com.beibu.mall.common.result.Result;
 import com.beibu.mall.inventory.api.dto.StockOperationDTO;
 import lombok.extern.slf4j.Slf4j;
@@ -30,17 +31,17 @@ public class InventoryFeignClientFallbackFactory implements FallbackFactory<Inve
         return new InventoryFeignClient() {
             @Override
             public Result<Void> occupyStock(StockOperationDTO stockOperationDTO) {
-                return Result.fail(503, "库存服务暂时不可用，请稍后重试");
+                throw new BizException(50003, "库存服务暂时不可用，请稍后重试");
             }
 
             @Override
             public Result<Void> releaseStock(StockOperationDTO stockOperationDTO) {
-                return Result.fail(503, "库存服务暂时不可用，请稍后重试");
+                throw new BizException(50004, "库存服务暂时不可用，请稍后重试");
             }
 
             @Override
             public Result<Void> confirmDeduct(StockOperationDTO stockOperationDTO) {
-                return Result.fail(503, "库存服务暂时不可用，请稍后重试");
+                throw new BizException(50005, "库存服务暂时不可用，请稍后重试");
             }
         };
     }

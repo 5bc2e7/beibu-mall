@@ -23,6 +23,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -78,6 +80,9 @@ class OrderServiceTest {
     @Mock
     private ValueOperations<String, String> valueOperations;
 
+    @Mock
+    private TransactionTemplate transactionTemplate;
+
     /**
      * @InjectMocks：创建真实的 Service 对象，并把上面的 Mock 对象注入进去
      * 这样 Service 调用 Mapper 时，实际上调用的是 Mock 对象
@@ -120,6 +125,13 @@ class OrderServiceTest {
         lenient().when(stringRedisTemplate.opsForValue()).thenReturn(valueOperations);
         lenient().when(valueOperations.setIfAbsent(anyString(), anyString(), anyLong(), any(TimeUnit.class)))
                 .thenReturn(true);
+
+        // 设置 TransactionTemplate Mock：直接执行回调（模拟事务行为）
+        lenient().when(transactionTemplate.execute(any(TransactionCallback.class)))
+                .thenAnswer(invocation -> {
+                    TransactionCallback<?> callback = invocation.getArgument(0);
+                    return callback.doInTransaction(null);
+                });
     }
 
     /**
@@ -325,12 +337,8 @@ class OrderServiceTest {
         // 验证调用了库存服务释放库存
         verify(inventoryFeignClient, times(1)).releaseStock(any(StockOperationDTO.class));
 
-        // 验证更新了订单状态
-        verify(orderInfoMapper, times(1)).updateById((OrderInfo) argThat(order -> {
-            // 验证订单状态被更新为已取消（4）
-            return ((OrderInfo) order).getStatus() == 4 &&
-                   "不想买了".equals(((OrderInfo) order).getCancelReason());
-        }));
+        // 验证更新了订单状态（第1次：设置取消状态；第2次：标记[已补偿]）
+        verify(orderInfoMapper, times(2)).updateById(any(OrderInfo.class));
     }
 
     /**

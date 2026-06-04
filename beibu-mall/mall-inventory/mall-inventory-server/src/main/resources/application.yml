@@ -11,7 +11,7 @@ spring:
 
   # 数据源配置
   datasource:
-    url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:${MYSQL_PORT:3307}/mall_inventory?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:${MYSQL_PORT:3307}/mall_inventory?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true
     username: ${MYSQL_USER:root}
     password: ${MYSQL_PASSWORD:root123456}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -63,7 +63,7 @@ knife4j:
   setting:
     language: zh_cn
 
-# Seata 分布式事务配置
+# Seata 分布式事务配置（Nacos 注册）
 seata:
   enabled: true
   application-id: ${spring.application.name}
@@ -71,9 +71,19 @@ seata:
   service:
     vgroup-mapping:
       beibu-mall-tx-group: default
-    grouplist:
-      default: ${SEATA_ADDR:127.0.0.1:8091}
   registry:
-    type: file
+    type: nacos
+    nacos:
+      server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+      namespace: ""
+      group: SEATA_GROUP
+      username: nacos
+      password: nacos
   config:
-    type: file
+    type: nacos
+    nacos:
+      server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+      namespace: ""
+      group: SEATA_GROUP
+      username: nacos
+      password: nacos

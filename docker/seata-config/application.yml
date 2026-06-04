@@ -1,11 +1,16 @@
 server:
-  port: 8091
+  port: 7091
 
 spring:
   application:
     name: seata-server
   main:
     web-application-type: none
+
+console:
+  user:
+    username: seata
+    password: seata
 
 logging:
   config: classpath:logback-spring.xml
@@ -14,10 +19,39 @@ logging:
 
 seata:
   config:
-    type: file
+    type: nacos
+    nacos:
+      server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+      namespace: ""
+      group: SEATA_GROUP
+      username: nacos
+      password: nacos
 
   registry:
-    type: file
+    type: nacos
+    nacos:
+      application: seata-server
+      server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+      namespace: ""
+      group: SEATA_GROUP
+      cluster: default
+      username: nacos
+      password: nacos
 
   store:
-    mode: file
+    mode: db
+    db:
+      datasource: druid
+      db-type: mysql
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:${MYSQL_PORT:3307}/seata_server?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true
+      user: ${MYSQL_USER:root}
+      password: ${MYSQL_PASSWORD:root123456}
+      min-conn: 5
+      max-conn: 100
+      global-table: global_table
+      branch-table: branch_table
+      lock-table: lock_table
+      distributed-lock-table: distributed_lock
+      query-limit: 1000
+      max-wait: 5000

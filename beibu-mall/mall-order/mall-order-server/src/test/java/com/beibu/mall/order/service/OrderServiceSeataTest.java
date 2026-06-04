@@ -294,31 +294,31 @@ class OrderServiceSeataTest {
     }
 
     /**
-     * 测试场景 6：库存服务返回 null 时的处理
+     * 测试场景 6：库存服务 Fallback 抛出 BizException
      *
      * 预期行为：
-     * 1. 库存服务返回 null（服务异常）
+     * 1. 库存服务不可用，Fallback 抛出 BizException(50003)
      * 2. 应该抛出 BizException
      * 3. 不应该创建订单
      */
     @Test
-    @DisplayName("库存服务返回 null 时 - 应该抛出异常")
-    void createOrder_InventoryServiceReturnsNull_ShouldFail() {
+    @DisplayName("库存服务 Fallback 异常时 - 应该抛出 BizException")
+    void createOrder_InventoryServiceFallback_ShouldThrowBizException() {
         // ========== Given ==========
         when(productFeignClient.getSkuById(100L))
                 .thenReturn(Result.ok(testSku));
 
-        // 模拟库存服务返回 null
+        // 模拟库存服务 Fallback 抛出 BizException
         when(inventoryFeignClient.occupyStock(any(StockOperationDTO.class)))
-                .thenReturn(null);
+                .thenThrow(new BizException(50003, "库存服务暂时不可用，请稍后重试"));
 
         // ========== When & Then ==========
         BizException exception = assertThrows(BizException.class, () -> {
             orderService.createOrder(createOrderDTO, userId);
         });
 
-        assertEquals(40003, exception.getCode());
-        assertTrue(exception.getMessage().contains("库存服务异常"));
+        assertEquals(50003, exception.getCode());
+        assertTrue(exception.getMessage().contains("库存服务暂时不可用"));
 
         // 验证没有保存订单
         verify(orderInfoMapper, never()).insert(any(OrderInfo.class));

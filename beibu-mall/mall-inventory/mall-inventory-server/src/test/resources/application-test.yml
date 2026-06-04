@@ -8,6 +8,10 @@ spring:
   application:
     name: inventory-service
 
+  # 覆盖主配置的 Nacos config import，避免连接 Nacos
+  config:
+    import: ""
+
   # 数据源配置：连接已运行的 MySQL 容器
   datasource:
     url: jdbc:mysql://localhost:3307/mall_inventory?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
@@ -22,6 +26,10 @@ spring:
         enabled: false
       config:
         enabled: false
+
+# 禁用 Seata（测试环境无 Seata Server）
+seata:
+  enabled: false
 
 # MyBatis-Plus 配置
 mybatis-plus:

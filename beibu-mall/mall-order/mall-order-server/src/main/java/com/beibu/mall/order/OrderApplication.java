@@ -4,6 +4,7 @@ import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.openfeign.EnableFeignClients;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * 订单服务启动类
@@ -26,6 +27,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
     "com.beibu.mall.product.api.feign",
     "com.beibu.mall.inventory.api.feign"
 })
+@EnableScheduling
 @MapperScan("com.beibu.mall.order.mapper")
 public class OrderApplication {
 

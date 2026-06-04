@@ -27,11 +27,34 @@ services:
       - "7091:7091"
     environment:
       - SEATA_PORT=8091
-      - STORE_MODE=file
+      - STORE_MODE=db
+      - NACOS_ADDR=nacos:8848
+      - MYSQL_HOST=mysql-seata
+      - MYSQL_PORT=3306
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=root123456
     volumes:
       - ./seata-config/application.yml:/seata-server/resources/application.yml
+    depends_on:
+      - mysql-seata
     networks:
       - docker_mall-net
+
+  mysql-seata:
+    image: mysql:8.0
+    container_name: seata-mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root123456
+      - MYSQL_DATABASE=seata_server
+      - TZ=Asia/Shanghai
+    volumes:
+      - seata-mysql-data:/var/lib/mysql
+      - ../data/seata-server.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - docker_mall-net
+
+volumes:
+  seata-mysql-data:
 
 networks:
   docker_mall-net:
