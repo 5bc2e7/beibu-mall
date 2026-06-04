@@ -1,0 +1,38 @@
+version: '3.8'
+
+# =============================================
+# Seata Server 配置
+# =============================================
+# Seata Server 是分布式事务的"总指挥"，负责协调各个服务的事务
+#
+# 启动命令：
+#   docker-compose -f docker-compose-seata.yml up -d
+#
+# 停止命令：
+#   docker-compose -f docker-compose-seata.yml down
+#
+# 查看日志：
+#   docker logs seata-server
+#
+# 管理界面：
+#   http://localhost:7091
+#   默认账号密码：seata/seata
+
+services:
+  seata-server:
+    image: apache/seata-server:2.6.0
+    container_name: seata-server
+    ports:
+      - "8091:8091"
+      - "7091:7091"
+    environment:
+      - SEATA_PORT=8091
+      - STORE_MODE=file
+    volumes:
+      - ./seata-config/application.yml:/seata-server/resources/application.yml
+    networks:
+      - docker_mall-net
+
+networks:
+  docker_mall-net:
+    external: true

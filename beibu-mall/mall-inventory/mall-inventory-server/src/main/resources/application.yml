@@ -3,37 +3,38 @@
 # =============================================
 
 server:
-  port: 9003  # 服务端口
+  port: 9003
 
 spring:
   application:
-    name: inventory-service  # 服务名称（注册到 Nacos 时用）
+    name: inventory-service
 
   # 数据源配置
   datasource:
-    url: jdbc:mysql://localhost:3307/mall_inventory?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
-    username: root
-    password: root123456
+    url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:${MYSQL_PORT:3307}/mall_inventory?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:root123456}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   # Redis 配置
   data:
     redis:
-      host: localhost
-      port: 6379
-      password: redis123456
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:redis123456}
       database: 0
 
-  # Nacos 配置（使用 spring.config.import 写法，这是新版推荐方式）
+  # Nacos 配置
   cloud:
     nacos:
-      server-addr: localhost:8848
-      username: nacos
-      password: nacos
       discovery:
-        namespace: public
+        server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+        username: nacos
+        password: nacos
       config:
-        namespace: public
+        server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+        username: nacos
+        password: nacos
         file-extension: yaml
   config:
     import:
@@ -42,13 +43,10 @@ spring:
 # MyBatis-Plus 配置
 mybatis-plus:
   configuration:
-    # 开启驼峰命名自动映射（数据库 user_name → Java userName）
     map-underscore-to-camel-case: true
-    # 开启 SQL 日志（开发环境用，生产环境关闭）
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
   global-config:
     db-config:
-      # 逻辑删除配置
       logic-delete-field: deleted
       logic-delete-value: 1
       logic-not-delete-value: 0
@@ -60,8 +58,22 @@ springdoc:
   api-docs:
     path: /v3/api-docs
 
-# Knife4j 增强配置
 knife4j:
   enable: true
   setting:
     language: zh_cn
+
+# Seata 分布式事务配置
+seata:
+  enabled: true
+  application-id: ${spring.application.name}
+  tx-service-group: beibu-mall-tx-group
+  service:
+    vgroup-mapping:
+      beibu-mall-tx-group: default
+    grouplist:
+      default: ${SEATA_ADDR:127.0.0.1:8091}
+  registry:
+    type: file
+  config:
+    type: file

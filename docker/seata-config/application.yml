@@ -1,0 +1,23 @@
+server:
+  port: 8091
+
+spring:
+  application:
+    name: seata-server
+  main:
+    web-application-type: none
+
+logging:
+  config: classpath:logback-spring.xml
+  file:
+    path: ${user.home}/logs/seata
+
+seata:
+  config:
+    type: file
+
+  registry:
+    type: file
+
+  store:
+    mode: file

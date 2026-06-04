@@ -22,6 +22,7 @@ import com.beibu.mall.product.api.dto.SkuVO;
 import com.beibu.mall.product.api.feign.ProductFeignClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.seata.spring.annotation.GlobalTransactional;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,11 +65,22 @@ public class OrderServiceImpl implements OrderService {
     /**
      * 创建订单
      *
-     * 新C1修复：@Transactional 放在外层方法，避免自调用导致事务失效
-     * 原理：Controller 通过代理调用 createOrder()，代理会拦截并开启事务
+     * @GlobalTransactional 替代 @Transactional，开启全局事务
+     * - name: 事务名称（用于监控和日志，方便在 Seata 管理界面查找）
+     * - rollbackFor: 哪些异常需要回滚（Exception.class 表示所有异常）
+     * - lockRetryInterval: 锁重试间隔（毫秒）
+     * - lockRetryTimes: 锁重试次数
+     *
+     * 这样"算价、预占库存、生成订单"就绑成一个全局事务了
+     * 如果任何一步失败，Seata 会自动回滚所有已执行的操作
      */
     @Override
-    @Transactional(rollbackFor = Exception.class)
+    @GlobalTransactional(
+        name = "create-order", 
+        rollbackFor = Exception.class,
+        lockRetryInterval = 100,
+        lockRetryTimes = 30
+    )
     public OrderVO createOrder(CreateOrderDTO createOrderDTO, Long userId) {
         log.info("开始创建订单，用户ID：{}，商品数量：{}", userId, createOrderDTO.getItems().size());
 
@@ -128,38 +140,19 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // ========== 2. 预占库存（RPC） ==========
-        // C4修复：存储完整的回滚信息，避免索引不一致导致数量错误
-        List<StockRollbackInfo> rollbackList = new ArrayList<>();
-        try {
-            for (OrderItem item : orderItems) {
-                StockOperationDTO stockDTO = new StockOperationDTO();
-                stockDTO.setSkuId(String.valueOf(item.getSkuId()));
-                stockDTO.setQuantity(item.getQuantity());
-                stockDTO.setOrderId(orderNo);
+        // 使用 Seata 分布式事务后，不再需要手动 catch 和回滚
+        // 如果库存预占失败，Seata 会自动回滚整个事务（包括前面的查询）
+        for (OrderItem item : orderItems) {
+            StockOperationDTO stockDTO = new StockOperationDTO();
+            stockDTO.setSkuId(String.valueOf(item.getSkuId()));
+            stockDTO.setQuantity(item.getQuantity());
+            stockDTO.setOrderId(orderNo);
 
-                Result<Void> stockResult = inventoryFeignClient.occupyStock(stockDTO);
-                if (stockResult == null || stockResult.getCode() != 200) {
-                    String msg = stockResult != null ? stockResult.getMsg() : "库存服务异常";
-                    throw new BizException(40003, "库存不足：" + msg);
-                }
-                // 预占成功，记录回滚信息
-                rollbackList.add(new StockRollbackInfo(
-                        String.valueOf(item.getSkuId()), item.getQuantity(), orderNo));
+            Result<Void> stockResult = inventoryFeignClient.occupyStock(stockDTO);
+            if (stockResult == null || stockResult.getCode() != 200) {
+                String msg = stockResult != null ? stockResult.getMsg() : "库存服务异常";
+                throw new BizException(40003, "库存不足：" + msg);
             }
-        } catch (Exception e) {
-            log.error("库存预占失败，开始回滚已预占的库存，已预占数量：{}", rollbackList.size());
-            for (StockRollbackInfo info : rollbackList) {
-                try {
-                    StockOperationDTO rollbackDTO = new StockOperationDTO();
-                    rollbackDTO.setSkuId(info.skuId);
-                    rollbackDTO.setQuantity(info.quantity);
-                    rollbackDTO.setOrderId(info.orderNo);
-                    inventoryFeignClient.releaseStock(rollbackDTO);
-                } catch (Exception rollbackEx) {
-                    log.error("回滚库存失败，SKU：{}，需要人工处理", info.skuId, rollbackEx);
-                }
-            }
-            throw e;
         }
 
         // ========== 3. 保存订单和明细（DB 操作，与上面同一个事务） ==========
@@ -341,18 +334,5 @@ public class OrderServiceImpl implements OrderService {
         vo.setItems(itemVOs);
 
         return vo;
-    }
-
-    /**
-     * 库存回滚信息
-     *
-     * C4修复：存储完整的 skuId + quantity，避免回滚时索引不一致导致数量错误
-     */
-    @lombok.AllArgsConstructor
-    @lombok.Data
-    private static class StockRollbackInfo {
-        private String skuId;
-        private Integer quantity;
-        private String orderNo;
     }
 }

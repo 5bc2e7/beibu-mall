@@ -48,6 +48,9 @@
         <!-- 工具 -->
         <lombok.version>1.18.34</lombok.version>
         <hutool.version>5.8.32</hutool.version>
+
+        <!-- 分布式事务 -->
+        <seata.version>2.6.0</seata.version>
     </properties>
 
     <!-- ==================== 依赖版本管理（核心） ==================== -->
@@ -131,14 +134,21 @@
                 <version>${project.version}</version>
             </dependency>
 
-            <!-- Hutool：Java 工具库 -->
-            <dependency>
-                <groupId>cn.hutool</groupId>
-                <artifactId>hutool-all</artifactId>
-                <version>${hutool.version}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
+        <!-- Hutool：Java 工具库 -->
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+            <version>${hutool.version}</version>
+        </dependency>
+
+        <!-- Seata 分布式事务：版本管理（没有 BOM，直接声明版本） -->
+        <dependency>
+            <groupId>org.apache.seata</groupId>
+            <artifactId>seata-spring-boot-starter</artifactId>
+            <version>${seata.version}</version>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
 
     <!-- ==================== 全局依赖（所有子模块都会继承） ==================== -->
     <dependencies>
