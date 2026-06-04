@@ -7,6 +7,7 @@ import com.beibu.mall.payment.dto.PaymentCallbackDTO;
 import com.beibu.mall.payment.dto.PaymentCreateDTO;
 import com.beibu.mall.payment.entity.PaymentLog;
 import com.beibu.mall.payment.entity.PaymentOrder;
+import com.beibu.mall.payment.enums.PaymentMethod;
 import com.beibu.mall.payment.enums.PaymentStatus;
 import com.beibu.mall.payment.mapper.PaymentLogMapper;
 import com.beibu.mall.payment.mapper.PaymentOrderMapper;
@@ -175,7 +176,7 @@ public class PaymentServiceImpl implements PaymentService {
         logEntity.setBeforeStatus(beforeStatus);
         logEntity.setAfterStatus(afterStatus);
         logEntity.setRemark(remark);
-        logEntity.setCreateTime(LocalDateTime.now());  // 手动设置创建时间
+        // createTime 由 MyMetaObjectHandler 自动填充
 
         paymentLogMapper.insert(logEntity);
     }
@@ -209,11 +210,10 @@ public class PaymentServiceImpl implements PaymentService {
      */
     private String getPaymentMethodDesc(Integer method) {
         if (method == null) return "未知";
-        return switch (method) {
-            case 1 -> "支付宝";
-            case 2 -> "微信";
-            case 3 -> "银行卡";
-            default -> "未知";
-        };
+        try {
+            return PaymentMethod.fromCode(method).getDesc();
+        } catch (IllegalArgumentException e) {
+            return "未知";
+        }
     }
 }
