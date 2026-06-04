@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.beibu.mall</groupId>
+        <artifactId>beibu-mall</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>mall-seckill</artifactId>
+    <packaging>pom</packaging>
+    <name>mall-seckill</name>
+    <description>
+        秒杀服务：负责时令海鲜限时限量抢购
+        - 秒杀活动管理
+        - 库存预热（Redis）
+        - 高并发抢购（Lua脚本 + RocketMQ削峰）
+        - 秒杀订单生成
+    </description>
+
+    <!-- 秒杀服务下的子模块 -->
+    <modules>
+        <module>mall-seckill-server</module>
+    </modules>
+</project>

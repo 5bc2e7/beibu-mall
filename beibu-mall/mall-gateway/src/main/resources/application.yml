@@ -49,6 +49,11 @@ spring:
           predicates:
             - Path=/api/payment/**
 
+        - id: seckill-service
+          uri: lb://seckill-service
+          predicates:
+            - Path=/api/seckill/**
+
   config:
     import:
       - optional:nacos:${spring.application.name}.yaml
