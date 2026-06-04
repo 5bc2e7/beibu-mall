@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.beibu.mall</groupId>
+        <artifactId>beibu-mall</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>mall-payment</artifactId>
+    <packaging>pom</packaging>
+    <name>mall-payment</name>
+    <description>
+        支付服务：负责支付相关的所有业务
+        - 发起支付（创建支付单）
+        - 支付回调处理（幂等性保证）
+        - 支付成功后通过 RocketMQ 通知订单服务
+    </description>
+
+    <modules>
+        <module>mall-payment-server</module>
+    </modules>
+</project>
