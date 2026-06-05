@@ -27,6 +27,7 @@
         <module>mall-order</module>
         <module>mall-payment</module>
         <module>mall-seckill</module>
+        <module>mall-search</module>
     </modules>
 
     <!-- ==================== 版本号集中管理 ==================== -->

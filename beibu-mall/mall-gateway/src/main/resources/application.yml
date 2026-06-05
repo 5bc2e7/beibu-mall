@@ -54,6 +54,11 @@ spring:
           predicates:
             - Path=/api/seckill/**
 
+        - id: search-service
+          uri: lb://search-service
+          predicates:
+            - Path=/api/search/**
+
   config:
     import:
       - optional:nacos:${spring.application.name}.yaml
@@ -76,6 +81,7 @@ gateway:
       - /api/product/list        # 商品列表（游客也能看）
       - /api/product/detail/**   # 商品详情（游客也能看）
       - /api/category/list       # 分类列表
+      - /api/search/**           # 搜索接口（游客也能搜）
       - /api/advert/list         # 广告列表
       # Swagger/Knife4j 文档（开发环境用）
       - /doc.html

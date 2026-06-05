@@ -10,9 +10,11 @@ import com.beibu.mall.product.api.dto.SpuQueryDTO;
 import com.beibu.mall.product.api.dto.SpuSaveDTO;
 import com.beibu.mall.product.api.dto.SpuVO;
 import com.beibu.mall.product.entity.Category;
+import com.beibu.mall.product.entity.Sku;
 import com.beibu.mall.product.entity.Spu;
 import com.beibu.mall.product.mapper.CategoryMapper;
 import com.beibu.mall.product.mapper.SpuMapper;
+import com.beibu.mall.product.mq.ProductSyncProducer;
 import com.beibu.mall.product.service.SkuService;
 import com.beibu.mall.product.service.SpuService;
 import lombok.RequiredArgsConstructor;
@@ -52,6 +54,7 @@ public class SpuServiceImpl implements SpuService {
     private final CategoryMapper categoryMapper;
     private final RedisTemplate<String, Object> redisTemplate;
     private final RedissonClient redissonClient;
+    private final ProductSyncProducer productSyncProducer;
 
     /** 缓存 key 前缀 */
     private static final String CACHE_KEY_PREFIX = "product:spu:detail:";
@@ -291,6 +294,10 @@ public class SpuServiceImpl implements SpuService {
         spu.setStatus(0);
 
         spuMapper.insert(spu);
+
+        // 事务提交后发送 MQ 消息通知搜索服务
+        syncProductToSearchAfterCommit(spu);
+
         return spu.getId();
     }
 
@@ -339,8 +346,8 @@ public class SpuServiceImpl implements SpuService {
 
         spuMapper.updateById(spu);
 
-        // 事务提交后再删缓存（防止事务回滚时缓存已被删除）
         evictSpuCacheAfterCommit(dto.getId());
+        syncProductToSearchAfterCommit(spu);
     }
 
     /**
@@ -363,8 +370,8 @@ public class SpuServiceImpl implements SpuService {
         spu.setStatus(1);
         spuMapper.updateById(spu);
 
-        // 事务提交后再删缓存
         evictSpuCacheAfterCommit(spuId);
+        syncProductToSearchAfterCommit(spu);
     }
 
     /**
@@ -387,8 +394,8 @@ public class SpuServiceImpl implements SpuService {
         spu.setStatus(0);
         spuMapper.updateById(spu);
 
-        // 事务提交后再删缓存
         evictSpuCacheAfterCommit(spuId);
+        syncProductToSearchAfterCommit(spu);
     }
 
     /**
@@ -407,8 +414,22 @@ public class SpuServiceImpl implements SpuService {
                 }
             });
         } else {
-            // 没有事务（比如测试环境），直接删
             evictSpuCache(spuId);
+        }
+    }
+
+    private void syncProductToSearchAfterCommit(Spu spu) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    List<Sku> skuList = skuService.listSkuEntityBySpuId(spu.getId());
+                    productSyncProducer.sendProductSyncMessage(spu, skuList);
+                }
+            });
+        } else {
+            List<Sku> skuList = skuService.listSkuEntityBySpuId(spu.getId());
+            productSyncProducer.sendProductSyncMessage(spu, skuList);
         }
     }
 

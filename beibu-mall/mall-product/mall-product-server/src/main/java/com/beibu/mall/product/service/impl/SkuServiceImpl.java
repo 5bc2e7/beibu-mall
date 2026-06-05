@@ -84,6 +84,16 @@ public class SkuServiceImpl implements SkuService {
     }
 
     @Override
+    public List<Sku> listSkuEntityBySpuId(Long spuId) {
+        return skuMapper.selectList(
+            new LambdaQueryWrapper<Sku>()
+                .eq(Sku::getSpuId, spuId)
+                .eq(Sku::getStatus, 1)
+                .orderByAsc(Sku::getId)
+        );
+    }
+
+    @Override
     @Transactional
     public Long addSku(SkuSaveDTO dto) {
         Spu spu = spuMapper.selectById(dto.getSpuId());

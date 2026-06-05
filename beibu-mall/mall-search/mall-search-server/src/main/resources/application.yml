@@ -1,0 +1,57 @@
+# ==================== 搜索服务配置 ====================
+
+server:
+  port: 9007  # 搜索服务端口
+
+spring:
+  application:
+    name: search-service  # 服务名称（注册到 Nacos 时用这个名字）
+
+  # ==================== Elasticsearch 配置 ====================
+  # 搜索服务连接 Elasticsearch
+  elasticsearch:
+    uris: ${ES_HOST:localhost}:${ES_PORT:9200}
+    username: ${ES_USERNAME:elastic}
+    password: ${ES_PASSWORD:elastic123456}
+
+  # ==================== Nacos 配置中心 ====================
+  cloud:
+    nacos:
+      server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+      username: nacos
+      password: nacos
+      discovery:
+        namespace: ${ENV:dev}  # 命名空间（dev/test/prod 环境隔离）
+      config:
+        namespace: ${ENV:dev}
+        file-extension: yaml
+  config:
+    import:
+      - optional:nacos:${spring.application.name}.yaml
+      - optional:nacos:common-shared.yaml
+
+  # ==================== Jackson 配置 ====================
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+
+  # ==================== Redis 配置 ====================
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:redis123456}
+
+# ==================== RocketMQ 配置 ====================
+# 搜索服务作为消费者，接收商品变更消息
+rocketmq:
+  name-server: ${ROCKETMQ_NAMESRV:127.0.0.1:9876}
+  consumer:
+    group: search-consumer-group
+
+# ==================== 日志配置 ====================
+logging:
+  level:
+    com.beibu.mall.search: debug
+    # ES 查询日志（开发环境用）
+    org.springframework.data.elasticsearch: debug
