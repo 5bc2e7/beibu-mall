@@ -25,7 +25,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication(scanBasePackages = "com.beibu.mall")
 @EnableFeignClients(basePackages = {
     "com.beibu.mall.product.api.feign",
-    "com.beibu.mall.inventory.api.feign"
+    "com.beibu.mall.inventory.api.feign",
+    "com.beibu.mall.order.feign"
 })
 @EnableScheduling
 @MapperScan("com.beibu.mall.order.mapper")

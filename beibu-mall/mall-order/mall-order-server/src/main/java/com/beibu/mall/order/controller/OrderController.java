@@ -1,5 +1,7 @@
 package com.beibu.mall.order.controller;
 
+import com.alibaba.csp.sentinel.annotation.SentinelResource;
+import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.beibu.mall.common.result.Result;
 import com.beibu.mall.order.api.dto.CreateOrderDTO;
@@ -9,6 +11,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,6 +32,7 @@ import org.springframework.web.bind.annotation.*;
  *
  * 注意：Controller 不应该有业务逻辑！业务逻辑放在 Service 里。
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/order")
 @RequiredArgsConstructor
@@ -45,11 +49,31 @@ public class OrderController {
      * @return 订单详情
      */
     @PostMapping
+    @SentinelResource(value = "createOrder", blockHandler = "createOrderBlockHandler")
     public Result<OrderVO> createOrder(
             @Valid @RequestBody CreateOrderDTO createOrderDTO,
             @RequestHeader("X-User-Id") Long userId) {
         OrderVO order = orderService.createOrder(createOrderDTO, userId);
         return Result.ok(order);
+    }
+
+    /**
+     * 下单接口的限流处理方法
+     *
+     * 当请求被 Sentinel 拦截时（比如 QPS 超过 50），会调用这个方法
+     * 返回友好提示，而不是直接报错
+     *
+     * 注意：blockHandler 方法的参数必须和原方法一样，最后加一个 BlockException 参数
+     *
+     * @param ex Sentinel 抛出的异常，包含限流规则信息
+     * @return 友好的错误提示
+     */
+    public Result<OrderVO> createOrderBlockHandler(
+            CreateOrderDTO createOrderDTO,
+            Long userId,
+            BlockException ex) {
+        log.warn("下单接口被限流，规则: {}", ex.getRule());
+        return Result.fail(429, "下单人数太多啦，请稍后再试~");
     }
 
     /**
@@ -77,11 +101,23 @@ public class OrderController {
      * @return 订单详情
      */
     @GetMapping("/{orderId}")
+    @SentinelResource(value = "queryOrder", blockHandler = "queryOrderBlockHandler")
     public Result<OrderVO> getOrderDetail(
             @PathVariable Long orderId,
             @RequestHeader("X-User-Id") Long userId) {
         OrderVO order = orderService.getOrderDetail(orderId, userId);
         return Result.ok(order);
+    }
+
+    /**
+     * 查询订单接口的限流处理方法
+     */
+    public Result<OrderVO> queryOrderBlockHandler(
+            Long orderId,
+            Long userId,
+            BlockException ex) {
+        log.warn("查询订单接口被限流，规则: {}", ex.getRule());
+        return Result.fail(429, "查询太频繁，请稍后再试");
     }
 
     /**
@@ -93,11 +129,21 @@ public class OrderController {
      * @return 操作结果
      */
     @PostMapping("/{orderId}/cancel")
+    @SentinelResource(value = "cancelOrder", blockHandler = "cancelOrderBlockHandler")
     public Result<Void> cancelOrder(
             @PathVariable Long orderId,
             @RequestHeader("X-User-Id") Long userId,
             @RequestParam(required = false) String reason) {
         orderService.cancelOrder(orderId, userId, reason);
         return Result.ok();
+    }
+
+    public Result<Void> cancelOrderBlockHandler(
+            Long orderId,
+            Long userId,
+            String reason,
+            BlockException ex) {
+        log.warn("取消订单接口被限流，规则: {}", ex.getRule());
+        return Result.fail(429, "操作太频繁，请稍后再试");
     }
 }

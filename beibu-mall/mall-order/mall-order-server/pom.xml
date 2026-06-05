@@ -126,6 +126,12 @@
             <artifactId>seata-spring-boot-starter</artifactId>
         </dependency>
 
+        <!-- Sentinel：流量控制、熔断降级 -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-sentinel</artifactId>
+        </dependency>
+
         <!-- ==================== 工具依赖 ==================== -->
         <!-- Hutool：Java 工具库 -->
         <dependency>

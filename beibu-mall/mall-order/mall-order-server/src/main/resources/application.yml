@@ -80,6 +80,18 @@ seata:
       username: nacos
       password: nacos
 
+# Sentinel 配置
+spring.cloud.sentinel:
+  transport:
+    dashboard: ${SENTINEL_DASHBOARD:127.0.0.1:8080}
+    port: 8719
+  eager: true
+
+# Feign + Sentinel 降级
+feign:
+  sentinel:
+    enabled: true
+
 mybatis-plus:
   mapper-locations: classpath:mapper/*.xml
   type-aliases-package: com.beibu.mall.order.entity
