@@ -12,8 +12,15 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3307/mall_product?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     username: root
-    password: root123456
+    password: ci_mysql_test_2024
     driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # Redis 配置（覆盖主配置的密码，匹配 CI 服务容器）
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: ci_redis_test_2024
 
   # 覆盖主配置的 Nacos config import，避免连接 Nacos
   config:
