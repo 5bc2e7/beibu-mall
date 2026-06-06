@@ -8,6 +8,7 @@ import com.beibu.mall.seckill.service.SeckillService;
 import com.beibu.mall.seckill.vo.SeckillResultVO;
 import com.beibu.mall.seckill.mq.SeckillMessage;
 import com.beibu.mall.seckill.mq.SeckillMessageProducer;
+import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,6 +58,9 @@ public class SeckillServiceTest {
 
     @MockitoBean
     private SeckillMessageProducer seckillMessageProducer;
+
+    @MockitoBean
+    private RocketMQTemplate rocketMQTemplate;
 
     private static final Long ACTIVITY_ID = 1001L;
     private static final int STOCK = 10;
