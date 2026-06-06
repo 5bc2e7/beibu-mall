@@ -1,17 +1,17 @@
 package com.beibu.mall.search;
 
+import com.beibu.mall.search.config.SearchTestConfig;
 import com.beibu.mall.search.dto.SearchRequest;
 import com.beibu.mall.search.dto.SearchResponse;
 import com.beibu.mall.search.entity.ProductDoc;
-import com.beibu.mall.search.mq.ProductSyncConsumer;
 import com.beibu.mall.search.repository.ProductSearchRepository;
 import com.beibu.mall.search.service.SearchService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -24,10 +24,8 @@ import java.util.concurrent.TimeUnit;
 
 @SpringBootTest
 @ActiveProfiles("test")
+@Import(SearchTestConfig.class)
 class SearchServiceTest {
-
-    @MockitoBean
-    private ProductSyncConsumer productSyncConsumer;
 
     @Autowired
     private SearchService searchService;

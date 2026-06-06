@@ -1,22 +1,22 @@
 package com.beibu.mall.seckill;
 
 import com.beibu.mall.seckill.config.RedisKeyConstants;
+import com.beibu.mall.seckill.config.SeckillTestConfig;
 import com.beibu.mall.seckill.dto.SeckillRequestDTO;
 import com.beibu.mall.seckill.entity.SeckillActivity;
 import com.beibu.mall.seckill.mapper.SeckillActivityMapper;
-import com.beibu.mall.seckill.service.SeckillService;
-import com.beibu.mall.seckill.vo.SeckillResultVO;
 import com.beibu.mall.seckill.mq.SeckillMessage;
 import com.beibu.mall.seckill.mq.SeckillMessageProducer;
-import org.apache.rocketmq.spring.core.RocketMQTemplate;
+import com.beibu.mall.seckill.service.SeckillService;
+import com.beibu.mall.seckill.vo.SeckillResultVO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -42,6 +42,7 @@ import static org.mockito.Mockito.verify;
  */
 @SpringBootTest
 @ActiveProfiles("test")
+@Import(SeckillTestConfig.class)
 public class SeckillServiceTest {
 
     @Autowired
@@ -56,11 +57,8 @@ public class SeckillServiceTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    @MockitoBean
+    @Autowired
     private SeckillMessageProducer seckillMessageProducer;
-
-    @MockitoBean
-    private RocketMQTemplate rocketMQTemplate;
 
     private static final Long ACTIVITY_ID = 1001L;
     private static final int STOCK = 10;
