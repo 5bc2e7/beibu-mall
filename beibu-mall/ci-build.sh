@@ -54,7 +54,13 @@ if command -v docker &> /dev/null; then
         docker run -d --name mall-mysql -p 3307:3306 \
             -e MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root123456} \
             mysql:8.0 --character-set-server=utf8mb4
-        sleep 10
+        echo "等待 MySQL 启动..."
+        sleep 15
+        echo "创建业务数据库..."
+        for db in mall_user mall_product mall_order mall_payment mall_seckill mall_inventory; do
+            docker exec mall-mysql mysql -uroot -p${MYSQL_ROOT_PASSWORD:-root123456} \
+                -e "CREATE DATABASE IF NOT EXISTS \`$db\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null
+        done
     fi
     
     # 检查 Redis

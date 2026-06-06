@@ -3,32 +3,43 @@ package com.beibu.mall.product.service;
 import com.beibu.mall.common.exception.BizException;
 import com.beibu.mall.product.api.dto.SpuDetailVO;
 import com.beibu.mall.product.api.dto.SpuSaveDTO;
+import com.beibu.mall.product.mapper.SpuMapper;
+import com.beibu.mall.product.mq.ProductSyncProducer;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@Transactional
 class SpuServiceIntegrationTest {
 
     @Autowired
     private SpuService spuService;
 
     @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
+    private SpuMapper spuMapper;
+
+    @MockitoBean
+    private ProductSyncProducer productSyncProducer;
 
     private SpuSaveDTO saveDTO;
 
+    private final List<Long> createdSpuIds = new ArrayList<>();
+
     @BeforeEach
     void setUp() {
+        createdSpuIds.clear();
+
         saveDTO = new SpuSaveDTO();
         saveDTO.setCategoryId(6L);
         saveDTO.setName("集成测试商品");
@@ -40,15 +51,24 @@ class SpuServiceIntegrationTest {
         saveDTO.setDescription("集成测试描述");
     }
 
+    @AfterEach
+    void tearDown() {
+        for (Long spuId : createdSpuIds) {
+            try {
+                spuMapper.deleteById(spuId);
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
     @Test
     @DisplayName("集成测试：添加商品并查询详情")
     void addSpu_and_getDetail() {
-        // 1. 添加商品
         Long spuId = spuService.addSpu(saveDTO);
+        createdSpuIds.add(spuId);
         assertNotNull(spuId);
         assertTrue(spuId > 0);
 
-        // 2. 查询商品详情
         SpuDetailVO detail = spuService.getSpuDetail(spuId);
         assertNotNull(detail);
         assertEquals(spuId, detail.getId());
@@ -65,18 +85,14 @@ class SpuServiceIntegrationTest {
     @Test
     @DisplayName("集成测试：上架和下架商品")
     void onSale_and_offSale() {
-        // 1. 添加商品（默认下架）
         Long spuId = spuService.addSpu(saveDTO);
+        createdSpuIds.add(spuId);
 
-        // 2. 上架商品
         spuService.onSale(spuId);
         SpuDetailVO detail1 = spuService.getSpuDetail(spuId);
         assertEquals(1, detail1.getStatus());
 
-        // 3. 下架商品
         spuService.offSale(spuId);
-        // @Transactional 导致 afterCommit 回调不触发，手动清除缓存
-        redisTemplate.delete("product:spu:detail:" + spuId);
         SpuDetailVO detail2 = spuService.getSpuDetail(spuId);
         assertEquals(0, detail2.getStatus());
     }
@@ -84,16 +100,14 @@ class SpuServiceIntegrationTest {
     @Test
     @DisplayName("集成测试：修改商品")
     void updateSpu() {
-        // 1. 添加商品
         Long spuId = spuService.addSpu(saveDTO);
+        createdSpuIds.add(spuId);
 
-        // 2. 修改商品
         saveDTO.setId(spuId);
         saveDTO.setName("修改后的商品名");
         saveDTO.setOrigin("修改后的产地");
         spuService.updateSpu(saveDTO);
 
-        // 3. 查询验证
         SpuDetailVO detail = spuService.getSpuDetail(spuId);
         assertEquals("修改后的商品名", detail.getName());
         assertEquals("修改后的产地", detail.getOrigin());
@@ -116,6 +130,7 @@ class SpuServiceIntegrationTest {
     @DisplayName("集成测试：重复上架抛出异常")
     void onSale_alreadyOnSale() {
         Long spuId = spuService.addSpu(saveDTO);
+        createdSpuIds.add(spuId);
         spuService.onSale(spuId);
         assertThrows(BizException.class, () -> spuService.onSale(spuId));
     }
@@ -124,6 +139,7 @@ class SpuServiceIntegrationTest {
     @DisplayName("集成测试：重复下架抛出异常")
     void offSale_alreadyOffSale() {
         Long spuId = spuService.addSpu(saveDTO);
+        createdSpuIds.add(spuId);
         assertThrows(BizException.class, () -> spuService.offSale(spuId));
     }
 }

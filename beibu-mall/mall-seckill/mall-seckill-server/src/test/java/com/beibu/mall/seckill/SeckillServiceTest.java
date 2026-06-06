@@ -6,12 +6,16 @@ import com.beibu.mall.seckill.entity.SeckillActivity;
 import com.beibu.mall.seckill.mapper.SeckillActivityMapper;
 import com.beibu.mall.seckill.service.SeckillService;
 import com.beibu.mall.seckill.vo.SeckillResultVO;
+import com.beibu.mall.seckill.mq.SeckillMessage;
+import com.beibu.mall.seckill.mq.SeckillMessageProducer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -21,6 +25,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 /**
  * 秒杀服务集成测试
@@ -33,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * - 预期：恰好 10 个成功，10 个失败
  */
 @SpringBootTest
+@ActiveProfiles("test")
 public class SeckillServiceTest {
 
     @Autowired
@@ -46,6 +54,9 @@ public class SeckillServiceTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @MockitoBean
+    private SeckillMessageProducer seckillMessageProducer;
 
     private static final Long ACTIVITY_ID = 1001L;
     private static final int STOCK = 10;
@@ -73,7 +84,9 @@ public class SeckillServiceTest {
         activity.setDeleted(0);
         seckillActivityMapper.insert(activity);
 
-        // 预热库存到 Redis
+        redisTemplate.delete(RedisKeyConstants.getStockKey(ACTIVITY_ID));
+        redisTemplate.delete(RedisKeyConstants.getBoughtKey(ACTIVITY_ID));
+
         seckillService.warmUpStock(ACTIVITY_ID);
     }
 
@@ -141,6 +154,8 @@ public class SeckillServiceTest {
         String stockKey = RedisKeyConstants.getStockKey(ACTIVITY_ID);
         Object remainingStock = redisTemplate.opsForValue().get(stockKey);
         assertEquals(0, remainingStock, "Redis 中的库存应该为 0");
+
+        verify(seckillMessageProducer, times(STOCK)).sendMessage(any(SeckillMessage.class));
     }
 
     /**
