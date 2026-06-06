@@ -15,7 +15,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.concurrent.TimeUnit;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -71,7 +74,13 @@ class SearchServiceTest {
 
         productSearchRepository.saveAll(List.of(product1, product2, product3));
         // 等待 ES 索引刷新（ES 是近实时搜索，写入后需要短暂等待才能被搜索到）
-        try { Thread.sleep(1000); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+        await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
+            SearchRequest probe = new SearchRequest();
+            probe.setCategoryId(1L);
+            SearchResponse check = searchService.search(probe);
+            assertNotNull(check);
+            assertTrue(check.getTotal() > 0, "ES index should have documents");
+        });
     }
 
     @Test

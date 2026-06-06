@@ -78,13 +78,13 @@ class SeckillMessageConsumerTest {
         SeckillActivity activity = createActivity(1L);
 
         when(seckillActivityMapper.selectById(1L)).thenReturn(activity);
-        when(seckillActivityMapper.update(isNull(), any())).thenReturn(1);
+        when(seckillActivityMapper.update(isNull(SeckillActivity.class), any())).thenReturn(1);
         doReturn(1).when(seckillOrderMapper).insert((SeckillOrder) any());
 
         consumer.onMessage(message);
 
         // Stock decremented
-        verify(seckillActivityMapper).update(isNull(), any());
+        verify(seckillActivityMapper).update(isNull(SeckillActivity.class), any());
         // Order inserted
         verify(seckillOrderMapper).insert(any(SeckillOrder.class));
         // Result status set to SUCCESS after commit
@@ -123,7 +123,7 @@ class SeckillMessageConsumerTest {
         SeckillActivity activity = createActivity(1L);
 
         when(seckillActivityMapper.selectById(1L)).thenReturn(activity);
-        when(seckillActivityMapper.update(isNull(), any())).thenReturn(0);
+        when(seckillActivityMapper.update(isNull(SeckillActivity.class), any())).thenReturn(0);
 
         consumer.onMessage(message);
 
@@ -144,14 +144,14 @@ class SeckillMessageConsumerTest {
 
         when(seckillActivityMapper.selectById(1L)).thenReturn(activity);
         // First call: stock decrement returns 1; second call: rollback returns 1
-        when(seckillActivityMapper.update(isNull(), any())).thenReturn(1).thenReturn(1);
+        when(seckillActivityMapper.update(isNull(SeckillActivity.class), any())).thenReturn(1).thenReturn(1);
         doThrow(new DuplicateKeyException("Duplicate entry for uk_user_activity"))
                 .when(seckillOrderMapper).insert((SeckillOrder) any());
 
         consumer.onMessage(message);
 
         // DB stock rollback called (2nd update call)
-        verify(seckillActivityMapper, times(2)).update(isNull(), any());
+        verify(seckillActivityMapper, times(2)).update(isNull(SeckillActivity.class), any());
         // Result set to FAILED directly (not after commit)
         verify(valueOperations).set(
                 eq("seckill:result:token-abc"), resultCaptor.capture(),
@@ -168,7 +168,7 @@ class SeckillMessageConsumerTest {
         SeckillActivity activity = createActivity(1L);
 
         when(seckillActivityMapper.selectById(1L)).thenReturn(activity);
-        when(seckillActivityMapper.update(isNull(), any())).thenReturn(1);
+        when(seckillActivityMapper.update(isNull(SeckillActivity.class), any())).thenReturn(1);
         // Generic RuntimeException (no retryable cause) during order insert
         doThrow(new RuntimeException("unexpected error"))
                 .when(seckillOrderMapper).insert((SeckillOrder) any());

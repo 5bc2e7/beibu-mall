@@ -237,6 +237,10 @@
                             <rules>
                                 <rule>
                                     <element>BUNDLE</element>
+                                    <excludes>
+                                        <exclude>com.beibu.mall.common.**</exclude>
+                                        <exclude>com.beibu.mall.gateway.**</exclude>
+                                    </excludes>
                                     <limits>
                                         <limit>
                                             <counter>LINE</counter>

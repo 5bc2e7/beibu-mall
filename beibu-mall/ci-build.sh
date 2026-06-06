@@ -48,34 +48,38 @@ if command -v docker &> /dev/null; then
     echo "Docker 可用，检查服务状态..."
     
     # 检查 MySQL
-    if ! docker ps | grep -q mall-mysql; then
+    if ! docker ps --filter name=mall-mysql --format '{{.Names}}' | grep -q mall-mysql; then
+        docker rm -f mall-mysql 2>/dev/null || true
         echo "启动 MySQL..."
         docker run -d --name mall-mysql -p 3307:3306 \
-            -e MYSQL_ROOT_PASSWORD=root123456 \
+            -e MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root123456} \
             mysql:8.0 --character-set-server=utf8mb4
         sleep 10
     fi
     
     # 检查 Redis
-    if ! docker ps | grep -q mall-redis; then
+    if ! docker ps --filter name=mall-redis --format '{{.Names}}' | grep -q mall-redis; then
+        docker rm -f mall-redis 2>/dev/null || true
         echo "启动 Redis..."
         docker run -d --name mall-redis -p 6379:6379 \
-            redis:7-alpine redis-server --requirepass redis123456
+            redis:7-alpine redis-server --requirepass ${REDIS_PASSWORD:-redis123456}
     fi
     
     # 检查 Elasticsearch
-    if ! docker ps | grep -q mall-elasticsearch; then
+    if ! docker ps --filter name=mall-elasticsearch --format '{{.Names}}' | grep -q mall-elasticsearch; then
+        docker rm -f mall-elasticsearch 2>/dev/null || true
         echo "启动 Elasticsearch..."
         docker run -d --name mall-elasticsearch -p 9200:9200 \
             -e "discovery.type=single-node" \
             -e "xpack.security.enabled=true" \
-            -e "ELASTIC_PASSWORD=elastic123456" \
+            -e "ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-elastic123456}" \
             -e "ES_JAVA_OPTS=-Xms512m -Xmx512m" \
             elasticsearch:8.12.0
     fi
     
     # 检查 RocketMQ Nameserver
-    if ! docker ps | grep -q mall-rocketmq-namesrv; then
+    if ! docker ps --filter name=mall-rocketmq-namesrv --format '{{.Names}}' | grep -q mall-rocketmq-namesrv; then
+        docker rm -f mall-rocketmq-namesrv 2>/dev/null || true
         echo "启动 RocketMQ Nameserver..."
         docker run -d --name mall-rocketmq-namesrv -p 9876:9876 \
             apache/rocketmq:5.3.1 sh mqnamesrv
@@ -83,7 +87,8 @@ if command -v docker &> /dev/null; then
     fi
     
     # 检查 RocketMQ Broker
-    if ! docker ps | grep -q mall-rocketmq-broker; then
+    if ! docker ps --filter name=mall-rocketmq-broker --format '{{.Names}}' | grep -q mall-rocketmq-broker; then
+        docker rm -f mall-rocketmq-broker 2>/dev/null || true
         echo "启动 RocketMQ Broker..."
         docker run -d --name mall-rocketmq-broker -p 10911:10911 -p 10909:10909 \
             -e "NAMESRV_ADDR=mall-rocketmq-namesrv:9876" \
@@ -91,7 +96,8 @@ if command -v docker &> /dev/null; then
     fi
 
     # 检查 Nacos
-    if ! docker ps | grep -q mall-nacos; then
+    if ! docker ps --filter name=mall-nacos --format '{{.Names}}' | grep -q mall-nacos; then
+        docker rm -f mall-nacos 2>/dev/null || true
         echo "启动 Nacos..."
         docker run -d --name mall-nacos --network host \
             -e MODE=standalone \
@@ -105,9 +111,9 @@ if command -v docker &> /dev/null; then
 else
     echo -e "${YELLOW}⚠ Docker 不可用，跳过服务启动${NC}"
     echo "请确保以下服务已运行："
-    echo "  - MySQL: localhost:3307 (root/root123456)"
-    echo "  - Redis: localhost:6379 (密码: redis123456)"
-    echo "  - Elasticsearch: localhost:9200 (elastic/elastic123456)"
+    echo "  - MySQL: localhost:3307 (root/\${MYSQL_ROOT_PASSWORD:-root123456})"
+    echo "  - Redis: localhost:6379 (密码: \${REDIS_PASSWORD:-redis123456})"
+    echo "  - Elasticsearch: localhost:9200 (elastic/\${ELASTIC_PASSWORD:-elastic123456})"
     echo "  - RocketMQ Nameserver: localhost:9876"
 fi
 

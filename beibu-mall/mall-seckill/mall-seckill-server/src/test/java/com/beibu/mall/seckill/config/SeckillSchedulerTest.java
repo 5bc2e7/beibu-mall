@@ -87,24 +87,24 @@ class SeckillSchedulerTest {
 
     @Test
     void autoUpdateActivityStatus_updatesStartedAndEnded() {
-        when(seckillActivityMapper.update(isNull(), any()))
+        when(seckillActivityMapper.update(isNull(SeckillActivity.class), any()))
                 .thenReturn(2)  // 2 activities started
                 .thenReturn(3); // 3 activities ended
 
         scheduler.autoUpdateActivityStatus();
 
-        verify(seckillActivityMapper, times(2)).update(isNull(), any());
+        verify(seckillActivityMapper, times(2)).update(isNull(SeckillActivity.class), any());
     }
 
     @Test
     void autoUpdateActivityStatus_noChanges() {
-        when(seckillActivityMapper.update(isNull(), any()))
+        when(seckillActivityMapper.update(isNull(SeckillActivity.class), any()))
                 .thenReturn(0)
                 .thenReturn(0);
 
         scheduler.autoUpdateActivityStatus();
 
-        verify(seckillActivityMapper, times(2)).update(isNull(), any());
+        verify(seckillActivityMapper, times(2)).update(isNull(SeckillActivity.class), any());
     }
 
     // ---- syncStock ----
