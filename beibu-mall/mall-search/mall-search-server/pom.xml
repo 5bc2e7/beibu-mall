@@ -52,12 +52,6 @@
             <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
         </dependency>
 
-        <!-- Spring Cloud Bootstrap：支持 spring.config.import 加载远程配置 -->
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-bootstrap</artifactId>
-        </dependency>
-
         <!-- LoadBalancer：客户端负载均衡 -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>

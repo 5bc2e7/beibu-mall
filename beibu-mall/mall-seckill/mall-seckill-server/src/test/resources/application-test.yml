@@ -17,8 +17,6 @@ spring:
 
   # 彻底禁用 Nacos（测试环境不需要注册中心和配置中心）
   cloud:
-    bootstrap:
-      enabled: false
     nacos:
       server-addr: 127.0.0.1:8848
       discovery:
@@ -27,6 +25,8 @@ spring:
       config:
         enabled: false
         server-addr: 127.0.0.1:8848
+        import-check:
+          enabled: false
 
   # 排除 Nacos 自动配置，防止连接尝试
   autoconfigure:
@@ -34,6 +34,9 @@ spring:
       - com.alibaba.cloud.nacos.discovery.NacosDiscoveryAutoConfiguration
       - com.alibaba.cloud.nacos.NacosServiceAutoConfiguration
       - com.alibaba.cloud.nacos.registry.NacosServiceRegistryAutoConfiguration
+      - com.alibaba.cloud.nacos.discovery.NacosDiscoveryClientConfiguration
+      - com.alibaba.cloud.nacos.discovery.reactive.NacosReactiveDiscoveryClientConfiguration
+      - com.alibaba.cloud.nacos.configdata.NacosConfigDataLocationResolver
 
   # Redis 配置
   data:

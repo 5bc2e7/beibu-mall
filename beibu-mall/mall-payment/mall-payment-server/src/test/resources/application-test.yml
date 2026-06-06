@@ -7,8 +7,6 @@ spring:
     username: sa
     password:
   cloud:
-    bootstrap:
-      enabled: false
     nacos:
       server-addr: 127.0.0.1:8848
       discovery:
@@ -17,11 +15,16 @@ spring:
       config:
         enabled: false
         server-addr: 127.0.0.1:8848
+        import-check:
+          enabled: false
   autoconfigure:
     exclude:
       - com.alibaba.cloud.nacos.discovery.NacosDiscoveryAutoConfiguration
       - com.alibaba.cloud.nacos.NacosServiceAutoConfiguration
       - com.alibaba.cloud.nacos.registry.NacosServiceRegistryAutoConfiguration
+      - com.alibaba.cloud.nacos.discovery.NacosDiscoveryClientConfiguration
+      - com.alibaba.cloud.nacos.discovery.reactive.NacosReactiveDiscoveryClientConfiguration
+      - com.alibaba.cloud.nacos.configdata.NacosConfigDataLocationResolver
 
 mybatis-plus:
   mapper-locations: classpath:mapper/*.xml
