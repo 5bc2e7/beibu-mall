@@ -21,6 +21,8 @@ spring:
 
   # 彻底禁用 Nacos（测试环境不需要注册中心和配置中心）
   cloud:
+    bootstrap:
+      enabled: false
     nacos:
       server-addr: 127.0.0.1:8848
       discovery:
