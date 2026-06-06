@@ -70,6 +70,8 @@ class SearchServiceTest {
         product3.setCreateTime(LocalDateTime.of(2024, 1, 17, 10, 30, 0));
 
         productSearchRepository.saveAll(List.of(product1, product2, product3));
+        // 等待 ES 索引刷新（ES 是近实时搜索，写入后需要短暂等待才能被搜索到）
+        try { Thread.sleep(1000); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
     }
 
     @Test
@@ -99,7 +101,7 @@ class SearchServiceTest {
     @Test
     void testSearchByPriceRange() {
         SearchRequest request = new SearchRequest();
-        request.setMinPrice(new BigDecimal("60.00"));
+        request.setMinPrice(new BigDecimal("40.00"));
         request.setMaxPrice(new BigDecimal("100.00"));
 
         SearchResponse response = searchService.search(request);

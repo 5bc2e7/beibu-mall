@@ -419,4 +419,134 @@ class PaymentServiceTest {
             verify(paymentSuccessProducer, times(1)).sendPaymentSuccess(any(PaymentOrder.class));
         }
     }
+
+    // ========== createPayment 测试 ==========
+
+    /**
+     * 测试11：创建支付单 - 新订单成功创建
+     *
+     * 场景：用户下单后首次创建支付单
+     * 预期：数据库中不存在该订单的支付单，创建成功并返回 PaymentVO
+     */
+    @Test
+    @DisplayName("创建支付单 - 新订单成功创建")
+    void createPayment_newOrder_success() {
+        // ========== Given ==========
+        PaymentCreateDTO createDTO = new PaymentCreateDTO();
+        createDTO.setOrderId("ORDER_20240201_001");
+        createDTO.setUserId(2001L);
+        createDTO.setAmount(new BigDecimal("99.90"));
+        createDTO.setPaymentMethod(1);
+
+        // 数据库中不存在该订单的支付单
+        when(paymentOrderMapper.selectOne(any()))
+                .thenReturn(null);
+        // insert 成功，且回填 ID
+        when(paymentOrderMapper.insert(any(PaymentOrder.class)))
+                .thenAnswer(invocation -> {
+                    PaymentOrder order = invocation.getArgument(0);
+                    order.setId(100L);
+                    return 1;
+                });
+        when(paymentLogMapper.insert(any(PaymentLog.class)))
+                .thenReturn(1);
+
+        // ========== When ==========
+        PaymentVO result = paymentService.createPayment(createDTO);
+
+        // ========== Then ==========
+        assertNotNull(result);
+        assertEquals("ORDER_20240201_001", result.getOrderId());
+        assertEquals(new BigDecimal("99.90"), result.getAmount());
+        assertEquals(PaymentStatus.PENDING.getCode(), result.getStatus());
+        assertEquals("待支付", result.getStatusDesc());
+        assertEquals("支付宝", result.getPaymentMethodDesc());
+        assertNotNull(result.getPaymentNo());
+        assertTrue(result.getPaymentNo().startsWith("PAY"));
+
+        verify(paymentOrderMapper, times(1)).insert(any(PaymentOrder.class));
+        verify(paymentLogMapper, times(1)).insert(any(PaymentLog.class));
+    }
+
+    /**
+     * 测试12：创建支付单 - 已存在时幂等返回
+     *
+     * 场景：重复调用 createPayment（同一订单号）
+     * 预期：返回已有的支付单，不重复插入
+     */
+    @Test
+    @DisplayName("创建支付单 - 已存在时幂等返回")
+    void createPayment_existingOrder_idempotent() {
+        // ========== Given ==========
+        PaymentCreateDTO createDTO = new PaymentCreateDTO();
+        createDTO.setOrderId("ORDER_20240101_001");
+        createDTO.setUserId(1001L);
+        createDTO.setAmount(new BigDecimal("199.80"));
+        createDTO.setPaymentMethod(1);
+
+        // 数据库中已存在该订单的支付单
+        when(paymentOrderMapper.selectOne(any()))
+                .thenReturn(testOrder);
+
+        // ========== When ==========
+        PaymentVO result = paymentService.createPayment(createDTO);
+
+        // ========== Then ==========
+        assertNotNull(result);
+        assertEquals("ORDER_20240101_001", result.getOrderId());
+
+        // 关键验证：没有插入新支付单
+        verify(paymentOrderMapper, never()).insert(any(PaymentOrder.class));
+        // 关键验证：没有插入操作日志
+        verify(paymentLogMapper, never()).insert(any(PaymentLog.class));
+    }
+
+    // ========== getPaymentByOrderId 测试 ==========
+
+    /**
+     * 测试13：查询支付单 - 存在时返回 PaymentVO
+     *
+     * 场景：根据订单号查询支付单详情
+     * 预期：返回正确的 PaymentVO
+     */
+    @Test
+    @DisplayName("查询支付单 - 存在时返回PaymentVO")
+    void getPaymentByOrderId_found() {
+        // ========== Given ==========
+        when(paymentOrderMapper.selectOne(any()))
+                .thenReturn(testOrder);
+
+        // ========== When ==========
+        PaymentVO result = paymentService.getPaymentByOrderId("ORDER_20240101_001");
+
+        // ========== Then ==========
+        assertNotNull(result);
+        assertEquals("ORDER_20240101_001", result.getOrderId());
+        assertEquals("PAY_20240101_001", result.getPaymentNo());
+        assertEquals(new BigDecimal("199.80"), result.getAmount());
+        assertEquals(PaymentStatus.PENDING.getCode(), result.getStatus());
+        assertEquals("待支付", result.getStatusDesc());
+    }
+
+    /**
+     * 测试14：查询支付单 - 不存在时抛出异常
+     *
+     * 场景：根据订单号查询不存在的支付单
+     * 预期：抛出 BizException，错误码 40020
+     */
+    @Test
+    @DisplayName("查询支付单 - 不存在时抛出BizException")
+    void getPaymentByOrderId_notFound() {
+        // ========== Given ==========
+        when(paymentOrderMapper.selectOne(any()))
+                .thenReturn(null);
+
+        // ========== When & Then ==========
+        BizException exception = assertThrows(BizException.class, () -> {
+            paymentService.getPaymentByOrderId("ORDER_NOT_EXIST");
+        });
+
+        assertEquals(40020, exception.getCode());
+        assertTrue(exception.getMessage().contains("不存在"));
+    }
 }

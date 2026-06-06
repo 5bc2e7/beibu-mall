@@ -5,6 +5,7 @@ import com.beibu.mall.common.exception.BizException;
 import com.beibu.mall.user.api.dto.LoginDTO;
 import com.beibu.mall.user.api.dto.LoginVO;
 import com.beibu.mall.user.api.dto.RegisterDTO;
+import com.beibu.mall.user.api.dto.UserVO;
 import com.beibu.mall.user.entity.User;
 import com.beibu.mall.user.mapper.UserMapper;
 import com.beibu.mall.user.service.impl.UserServiceImpl;
@@ -17,6 +18,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.util.DigestUtils;
+
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -169,5 +172,67 @@ class UserServiceTest {
 
         assertEquals(40004, exception.getCode());
         assertEquals("账号已被禁用", exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("注册失败 - 手机号已被注册")
+    void register_phoneAlreadyRegistered() {
+        // given：模拟用户名不存在但手机号已存在
+        // 第一次调用 selectCount（用户名检查）返回 0，第二次（手机号检查）返回 1
+        when(userMapper.selectCount(any(LambdaQueryWrapper.class)))
+                .thenReturn(0L)   // 第一次调用：用户名检查 → 不存在
+                .thenReturn(1L);  // 第二次调用：手机号检查 → 已存在
+
+        // when & then：期望抛出 BizException
+        BizException exception = assertThrows(BizException.class,
+                () -> userService.register(registerDTO));
+
+        // 验证异常信息
+        assertEquals(40002, exception.getCode());
+        assertEquals("手机号已被注册", exception.getMessage());
+
+        // 验证 insert 没有被调用（因为注册失败了）
+        verify(userMapper, never()).insert(any(User.class));
+    }
+
+    @Test
+    @DisplayName("根据ID查询用户成功")
+    void getUserById_success() {
+        // given：模拟数据库返回用户
+        testUser.setAvatar("https://example.com/avatar.jpg");
+        testUser.setGender(1);
+        testUser.setCreateTime(LocalDateTime.of(2025, 1, 1, 12, 0, 0));
+        when(userMapper.selectById(1L)).thenReturn(testUser);
+
+        // when
+        UserVO result = userService.getUserById(1L);
+
+        // then：验证返回的 VO 字段正确
+        assertNotNull(result);
+        assertEquals(1L, result.getId());
+        assertEquals("testuser", result.getUsername());
+        assertEquals("13800138000", result.getPhone());
+        assertEquals("testuser", result.getNickname());
+        assertEquals("https://example.com/avatar.jpg", result.getAvatar());
+        assertEquals(1, result.getGender());
+        assertEquals(LocalDateTime.of(2025, 1, 1, 12, 0, 0), result.getCreateTime());
+
+        // 验证不应包含密码字段（VO 没有 password）
+        verify(userMapper, times(1)).selectById(1L);
+    }
+
+    @Test
+    @DisplayName("根据ID查询用户失败 - 用户不存在")
+    void getUserById_userNotFound() {
+        // given：模拟数据库中没有该用户
+        when(userMapper.selectById(999L)).thenReturn(null);
+
+        // when & then：期望抛出 BizException
+        BizException exception = assertThrows(BizException.class,
+                () -> userService.getUserById(999L));
+
+        // 验证异常信息
+        assertEquals(40005, exception.getCode());
+        assertEquals("用户不存在", exception.getMessage());
     }
 }

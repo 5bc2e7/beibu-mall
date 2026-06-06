@@ -65,6 +65,9 @@ class SpuServiceTest {
     private RedissonClient redissonClient;
 
     @Mock
+    private com.beibu.mall.product.mq.ProductSyncProducer productSyncProducer;
+
+    @Mock
     private RLock rLock;
 
     @InjectMocks

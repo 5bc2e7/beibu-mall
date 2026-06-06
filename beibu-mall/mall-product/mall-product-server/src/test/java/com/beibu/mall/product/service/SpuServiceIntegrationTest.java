@@ -8,6 +8,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,9 @@ class SpuServiceIntegrationTest {
 
     @Autowired
     private SpuService spuService;
+
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
 
     private SpuSaveDTO saveDTO;
 
@@ -71,6 +75,8 @@ class SpuServiceIntegrationTest {
 
         // 3. 下架商品
         spuService.offSale(spuId);
+        // @Transactional 导致 afterCommit 回调不触发，手动清除缓存
+        redisTemplate.delete("product:spu:detail:" + spuId);
         SpuDetailVO detail2 = spuService.getSpuDetail(spuId);
         assertEquals(0, detail2.getStatus());
     }

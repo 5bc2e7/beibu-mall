@@ -57,6 +57,13 @@
 
         <!-- 分布式锁 -->
         <redisson.version>3.37.0</redisson.version>
+
+        <!-- 测试覆盖率 -->
+        <jacoco.version>0.8.14</jacoco.version>
+        <!-- 门禁阈值：默认 70%（生产标准） -->
+        <jacoco.coverage.minimum>0.70</jacoco.coverage.minimum>
+        <!-- 门禁开关：默认 true（阻断构建） -->
+        <jacoco.haltOnFailure>true</jacoco.haltOnFailure>
     </properties>
 
     <!-- ==================== 依赖版本管理（核心） ==================== -->
@@ -196,6 +203,53 @@
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
+            </plugin>
+
+            <!-- JaCoCo 测试覆盖率插件 -->
+            <!-- 统计代码行覆盖率，低于 70% 则构建失败 -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <!-- 1. 在测试执行前挂载 JaCoCo Agent，收集覆盖率数据 -->
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <!-- 2. 测试完成后生成 HTML 覆盖率报告 -->
+                    <execution>
+                        <id>report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                    <!-- 3. 覆盖率门禁：行覆盖率低于阈值则构建失败（可通过属性控制） -->
+                    <execution>
+                        <id>jacoco-check</id>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>${jacoco.coverage.minimum}</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                            <haltOnFailure>${jacoco.haltOnFailure}</haltOnFailure>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
