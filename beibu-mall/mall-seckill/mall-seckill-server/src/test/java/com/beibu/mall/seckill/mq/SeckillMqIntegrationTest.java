@@ -11,8 +11,11 @@ import com.beibu.mall.seckill.vo.SeckillResultStatus;
 import com.beibu.mall.seckill.vo.SeckillResultVO;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -51,6 +54,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @ActiveProfiles("test")
 @Testcontainers
 @Tag("integration")
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class SeckillMqIntegrationTest {
 
     @Container
@@ -91,6 +95,10 @@ class SeckillMqIntegrationTest {
 
         // 创建 Topic
         rocketmq.createTopic("seckill-topic");
+
+        // 等待前一个测试的消费者处理完成（排水机制）
+        // 通过检查订单数量在多次轮询中保持稳定来确认没有 in-flight 消息
+        drainPendingMessages();
 
         // 清理测试数据
         jdbcTemplate.execute("DELETE FROM seckill_order WHERE activity_id = " + ACTIVITY_ID);
@@ -134,6 +142,7 @@ class SeckillMqIntegrationTest {
      * 验证消息能正常发送到 RocketMQ
      */
     @Test
+    @Order(1)
     void testSendSeckillMessage() {
         // Given
         SeckillRequestDTO request = new SeckillRequestDTO();
@@ -158,8 +167,8 @@ class SeckillMqIntegrationTest {
                 });
 
         // 验证消费者创建了订单
-        await().atMost(15, TimeUnit.SECONDS)
-                .pollInterval(1, TimeUnit.SECONDS)
+        await().atMost(30, TimeUnit.SECONDS)
+                .pollInterval(2, TimeUnit.SECONDS)
                 .untilAsserted(() -> {
                     SeckillOrder order = seckillOrderMapper.selectOne(
                             new LambdaQueryWrapper<SeckillOrder>()
@@ -170,8 +179,8 @@ class SeckillMqIntegrationTest {
                 });
 
         // 验证结果状态被消费者更新为 SUCCESS
-        await().atMost(15, TimeUnit.SECONDS)
-                .pollInterval(1, TimeUnit.SECONDS)
+        await().atMost(30, TimeUnit.SECONDS)
+                .pollInterval(2, TimeUnit.SECONDS)
                 .untilAsserted(() -> {
                     String resultKey = RedisKeyConstants.getResultKey(token);
                     SeckillResultStatus resultStatus = (SeckillResultStatus) redisTemplate.opsForValue().get(resultKey);
@@ -187,6 +196,7 @@ class SeckillMqIntegrationTest {
      * 同一个用户抢两次，第二次应该失败
      */
     @Test
+    @Order(2)
     void testDuplicateSeckill() {
         // Given
         Long userId = 100L;
@@ -200,8 +210,8 @@ class SeckillMqIntegrationTest {
         assertTrue(result1.getSuccess(), "第一次抢购应该成功");
 
         // 验证消费者创建了订单
-        await().atMost(15, TimeUnit.SECONDS)
-                .pollInterval(1, TimeUnit.SECONDS)
+        await().atMost(30, TimeUnit.SECONDS)
+                .pollInterval(2, TimeUnit.SECONDS)
                 .untilAsserted(() -> {
                     SeckillOrder order = seckillOrderMapper.selectOne(
                             new LambdaQueryWrapper<SeckillOrder>()
@@ -224,6 +234,7 @@ class SeckillMqIntegrationTest {
      * 多个用户同时抢购，验证库存不会超卖
      */
     @Test
+    @Order(3)
     void testConcurrentSeckill() throws InterruptedException {
         // Given
         int userCount = 10;
@@ -274,5 +285,38 @@ class SeckillMqIntegrationTest {
                                     .eq(SeckillOrder::getActivityId, ACTIVITY_ID));
                     assertEquals((long) STOCK, orderCount, "消费者应该创建了 " + STOCK + " 个订单");
                 });
+    }
+
+    /**
+     * 排水机制：等待前一个测试的消费者处理完成
+     * 通过检查订单数量在多次轮询中保持稳定来确认没有 in-flight 消息
+     */
+    private void drainPendingMessages() {
+        Long previousCount = seckillOrderMapper.selectCount(
+                new LambdaQueryWrapper<SeckillOrder>()
+                        .eq(SeckillOrder::getActivityId, ACTIVITY_ID));
+        int stablePolls = 0;
+        int requiredStablePolls = 3;
+        int maxPolls = 15;
+        int pollCount = 0;
+
+        while (stablePolls < requiredStablePolls && pollCount < maxPolls) {
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+            Long currentCount = seckillOrderMapper.selectCount(
+                    new LambdaQueryWrapper<SeckillOrder>()
+                            .eq(SeckillOrder::getActivityId, ACTIVITY_ID));
+            if (currentCount.equals(previousCount)) {
+                stablePolls++;
+            } else {
+                stablePolls = 0;
+                previousCount = currentCount;
+            }
+            pollCount++;
+        }
     }
 }
