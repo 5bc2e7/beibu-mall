@@ -23,13 +23,13 @@ spring:
   elasticsearch:
     uris: localhost:9200
     username: elastic
-    password: elastic123456
+    password: ci_es_test_2024
 
   data:
     redis:
       host: localhost
       port: 6379
-      password: redis123456
+      password: ci_redis_test_2024
 
   config:
     import: ""
