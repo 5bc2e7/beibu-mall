@@ -1,8 +1,9 @@
 package com.beibu.mall.search.config;
 
 import com.beibu.mall.search.mq.ProductSyncConsumer;
+import org.mockito.Mockito;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.context.annotation.Bean;
 
 /**
  * 搜索模块测试配置
@@ -13,6 +14,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 @TestConfiguration
 public class SearchTestConfig {
 
-    @MockitoBean
-    private ProductSyncConsumer productSyncConsumer;
+    @Bean
+    public ProductSyncConsumer productSyncConsumer() {
+        return Mockito.mock(ProductSyncConsumer.class);
+    }
 }

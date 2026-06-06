@@ -2,9 +2,9 @@ package com.beibu.mall.seckill.config;
 
 import com.beibu.mall.seckill.mq.SeckillMessageProducer;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
+import org.mockito.Mockito;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 /**
  * 秒杀模块测试配置
@@ -15,9 +15,13 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 @TestConfiguration
 public class SeckillTestConfig {
 
-    @MockitoBean
-    private SeckillMessageProducer seckillMessageProducer;
+    @Bean
+    public RocketMQTemplate rocketMQTemplate() {
+        return Mockito.mock(RocketMQTemplate.class);
+    }
 
-    @MockitoBean
-    private RocketMQTemplate rocketMQTemplate;
+    @Bean
+    public SeckillMessageProducer seckillMessageProducer() {
+        return Mockito.mock(SeckillMessageProducer.class);
+    }
 }
