@@ -38,9 +38,6 @@ spring:
       - com.alibaba.cloud.nacos.discovery.NacosDiscoveryAutoConfiguration
       - com.alibaba.cloud.nacos.NacosServiceAutoConfiguration
       - com.alibaba.cloud.nacos.registry.NacosServiceRegistryAutoConfiguration
-      - com.alibaba.cloud.nacos.discovery.NacosDiscoveryClientConfiguration
-      - com.alibaba.cloud.nacos.discovery.reactive.NacosReactiveDiscoveryClientConfiguration
-      - com.alibaba.cloud.nacos.configdata.NacosConfigDataLocationResolver
 
 # 禁用 Seata（测试环境无 Seata Server）
 seata:
