@@ -8,6 +8,7 @@ import org.testcontainers.utility.DockerImageName;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -15,7 +16,7 @@ import java.util.concurrent.TimeUnit;
  * RocketMQ Testcontainers 辅助类
  *
  * 单容器模式：NameServer + Broker 在一个容器中
- * 参考 Apache Brave 和 Debezium 的实现
+ * 参考 Apache Brave 的实现，使用固定端口绑定
  */
 public class RocketMQTestContainer extends GenericContainer<RocketMQTestContainer> {
 
@@ -26,7 +27,11 @@ public class RocketMQTestContainer extends GenericContainer<RocketMQTestContaine
 
     public RocketMQTestContainer() {
         super(DockerImageName.parse(IMAGE + ":" + VERSION));
-        withExposedPorts(NAMESRV_PORT, BROKER_PORT);
+        // 使用固定端口绑定，避免动态映射导致的连接问题
+        setPortBindings(Arrays.asList(
+                String.format("%d:%d", NAMESRV_PORT, NAMESRV_PORT),
+                String.format("%d:%d", BROKER_PORT, BROKER_PORT)
+        ));
         // CI 环境内存限制
         withEnv("JAVA_OPT_EXT", "-Xms256m -Xmx256m");
     }
@@ -48,10 +53,8 @@ public class RocketMQTestContainer extends GenericContainer<RocketMQTestContaine
     @Override
     protected void containerIsStarted(InspectContainerResponse containerInfo) {
         // 关键：更新 brokerIP1 配置，让客户端能从外部连接
-        // brokerIP1 必须是主机地址，客户端会用这个地址连接 broker
         List<String> commands = new ArrayList<>();
         commands.add(updateBrokerConfig("brokerIP1", getHost()));
-        commands.add(updateBrokerConfig("listenPort", getMappedPort(BROKER_PORT)));
         commands.add(updateBrokerConfig("autoCreateTopicEnable", true));
         commands.add(updateBrokerConfig("brokerPermission", 6));
 
@@ -84,7 +87,7 @@ public class RocketMQTestContainer extends GenericContainer<RocketMQTestContaine
      * 获取 NameServer 地址
      */
     public String getNamesrvAddr() {
-        return getHost() + ":" + getMappedPort(NAMESRV_PORT);
+        return getHost() + ":" + NAMESRV_PORT;
     }
 
     /**
