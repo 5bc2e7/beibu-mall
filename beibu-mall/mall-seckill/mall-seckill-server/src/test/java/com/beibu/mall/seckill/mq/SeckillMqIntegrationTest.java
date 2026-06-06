@@ -49,7 +49,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * - 并发抢购 → 验证库存不超卖
  */
 @SpringBootTest(properties = {
-        "spring.autoconfigure.exclude="
+        "spring.autoconfigure.exclude=" +
+                "com.alibaba.cloud.nacos.discovery.NacosDiscoveryAutoConfiguration," +
+                "com.alibaba.cloud.nacos.NacosServiceAutoConfiguration," +
+                "com.alibaba.cloud.nacos.registry.NacosServiceRegistryAutoConfiguration"
 })
 @ActiveProfiles("test")
 @Testcontainers
