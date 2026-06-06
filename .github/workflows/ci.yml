@@ -108,9 +108,9 @@ jobs:
       # mvn verify = 编译 + 跑测试 + JaCoCo 覆盖率检查 + 打包
       # -B 表示 batch 模式（非交互式，CI 里必须加）
       # -Dtest 排除集成测试（需要 Nacos/Redis 等外部服务）
-      # 只跑单元测试（Mockito），跳过 @SpringBootTest 集成测试
+      # -Dsurefire.failIfNoSpecifiedTests=false 模块没测试时不报错
       - name: Build, Test & Check Coverage
-        run: mvn clean verify -B -Dtest='!*IntegrationTest'
+        run: mvn clean verify -B -Dtest='!*IntegrationTest' -Dsurefire.failIfNoSpecifiedTests=false
         working-directory: beibu-mall
 
       # ------ 第 5 步：上传测试报告（可选但推荐） ------
