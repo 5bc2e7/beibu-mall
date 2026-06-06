@@ -1,0 +1,139 @@
+# ============================================================
+# GitHub Actions CI 配置 —— 北部湾海鲜商城
+# ============================================================
+# 这个文件告诉 GitHub："每次有人 push 代码或提 PR，自动执行以下步骤"
+#
+# 放置路径：.github/workflows/ci.yml
+# 文件名 ci.yml 可以随便取，但后缀必须是 .yml
+# ============================================================
+
+name: CI Build & Test  # 在 GitHub Actions 页面显示的名字
+
+# ==================== 触发条件 ====================
+# 什么时候自动运行这个 workflow？
+on:
+  push:
+    # push 到以下分支时触发
+    branches: [ main, develop, 'feature/**' ]
+  pull_request:
+    # 提 PR 合并到以下分支时触发
+    branches: [ main, develop ]
+
+# ==================== 权限设置 ====================
+# 给这个 workflow 的权限（最小权限原则）
+permissions:
+  contents: read  # 只读取代码，不写入
+
+# ==================== 任务定义 ====================
+jobs:
+  build-and-test:
+    # 这个 job 的名字，会显示在 GitHub 页面上
+    name: Build & Test (JDK ${{ matrix.java-version }})
+
+    # 在什么操作系统上跑（Ubuntu 最便宜，推荐）
+    runs-on: ubuntu-latest
+
+    # ==================== 策略矩阵 ====================
+    # 如果以后想测多个 JDK 版本，在这里加就行
+    # 现在只测 JDK 21
+    strategy:
+      matrix:
+        java-version: [ 21 ]
+
+    # ==================== 服务容器 ====================
+    # GitHub Actions 可以在跑任务的同时启动其他容器
+    # 这里启动一个 MySQL 8，给集成测试用
+    services:
+      mysql:
+        image: mysql:8.0  # Docker 镜像
+        env:
+          # MySQL root 密码（和你 application-test.yml 里写的一致）
+          MYSQL_ROOT_PASSWORD: root123456
+        ports:
+          # 把容器的 3306 端口映射到主机的 3307
+          # 格式：主机端口:容器端口
+          - 3307:3306
+        # 健康检查：等 MySQL 真正启动好了再继续
+        # （容器启动需要时间，不等的话后面连接会失败）
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    # ==================== 执行步骤 ====================
+    steps:
+      # ------ 第 1 步：拉取代码 ------
+      # actions/checkout 是 GitHub 官方提供的 action
+      # 它把你的仓库代码下载到当前工作目录
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ------ 第 2 步：安装 JDK ------
+      # actions/setup-java 会帮你安装指定版本的 JDK
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java-version }}
+          # 用 Temurin（前身是 AdoptOpenJDK），免费且长期支持
+          distribution: 'temurin'
+          # Maven 缓存：下次跑 CI 时不用重新下载所有依赖，加速构建
+          cache: 'maven'
+
+      # ------ 第 3 步：创建测试数据库 ------
+      # application-test.yml 里配置了多个数据库（mall_product, mall_order 等）
+      # MySQL 容器启动时是空的，需要我们手动创建这些库
+      - name: Create test databases
+        run: |
+          # 等 MySQL 就绪（双重保险，除了 healthcheck 再等一下）
+          for i in $(seq 1 30); do
+            mysql -h 127.0.0.1 -P 3307 -u root -proot123456 -e "SELECT 1" > /dev/null 2>&1 && break
+            echo "Waiting for MySQL... ($i/30)"
+            sleep 2
+          done
+          # 创建各个服务需要的数据库
+          mysql -h 127.0.0.1 -P 3307 -u root -proot123456 -e "
+            CREATE DATABASE IF NOT EXISTS mall_user DEFAULT CHARSET utf8mb4;
+            CREATE DATABASE IF NOT EXISTS mall_product DEFAULT CHARSET utf8mb4;
+            CREATE DATABASE IF NOT EXISTS mall_inventory DEFAULT CHARSET utf8mb4;
+            CREATE DATABASE IF NOT EXISTS mall_order DEFAULT CHARSET utf8mb4;
+            CREATE DATABASE IF NOT EXISTS mall_payment DEFAULT CHARSET utf8mb4;
+            CREATE DATABASE IF NOT EXISTS mall_seckill DEFAULT CHARSET utf8mb4;
+            CREATE DATABASE IF NOT EXISTS mall_cart DEFAULT CHARSET utf8mb4;
+            CREATE DATABASE IF NOT EXISTS mall_search DEFAULT CHARSET utf8mb4;
+          "
+          echo "✅ All test databases created."
+
+      # ------ 第 4 步：Maven 编译 + 测试 + 覆盖率检查 ------
+      # mvn verify = 编译 + 跑测试 + JaCoCo 覆盖率检查 + 打包
+      # -B 表示 batch 模式（非交互式，CI 里必须加）
+      #
+      # 注意：不需要 -P test 或 SPRING_PROFILES_ACTIVE
+      # 因为集成测试类上已经有 @ActiveProfiles("test") 注解
+      # Spring 会自动读取 application-test.yml
+      - name: Build, Test & Check Coverage
+        run: mvn clean verify -B
+        working-directory: beibu-mall  # Maven 项目在 beibu-mall 子目录
+
+      # ------ 第 5 步：上传测试报告（可选但推荐） ------
+      # 即使构建失败了（测试挂了），也把测试报告保存下来
+      # 你可以在 GitHub Actions 页面下载这个报告查看具体哪些测试挂了
+      - name: Upload Test Reports
+        if: always()  # always() 表示不管前面成功失败都执行
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-jdk${{ matrix.java-version }}
+          path: |
+            beibu-mall/**/target/surefire-reports/
+            beibu-mall/**/target/site/jacoco/
+          retention-days: 7  # 保留 7 天，之后自动删除
+
+      # ------ 第 6 步：上传覆盖率报告（可选） ------
+      # JaCoCo 生成的 HTML 报告，下载后用浏览器打开就能看
+      - name: Upload Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-jdk${{ matrix.java-version }}
+          path: beibu-mall/**/target/site/jacoco/
+          retention-days: 7
