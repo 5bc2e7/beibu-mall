@@ -33,10 +33,6 @@ jobs:
     # 在什么操作系统上跑（Ubuntu 最便宜，推荐）
     runs-on: ubuntu-latest
 
-    # 强制使用 Node.js 24（Node.js 20 已废弃）
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-
     # ==================== 策略矩阵 ====================
     # 如果以后想测多个 JDK 版本，在这里加就行
     # 现在只测 JDK 21
@@ -92,12 +88,12 @@ jobs:
       # actions/checkout 是 GitHub 官方提供的 action
       # 它把你的仓库代码下载到当前工作目录
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # ------ 第 2 步：安装 JDK ------
       # actions/setup-java 会帮你安装指定版本的 JDK
       - name: Set up JDK ${{ matrix.java-version }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: ${{ matrix.java-version }}
           # 用 Temurin（前身是 AdoptOpenJDK），免费且长期支持
@@ -144,7 +140,7 @@ jobs:
       # 你可以在 GitHub Actions 页面下载这个报告查看具体哪些测试挂了
       - name: Upload Test Reports
         if: always()  # always() 表示不管前面成功失败都执行
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-reports-jdk${{ matrix.java-version }}
           path: |
@@ -156,7 +152,7 @@ jobs:
       # JaCoCo 生成的 HTML 报告，下载后用浏览器打开就能看
       - name: Upload Coverage Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report-jdk${{ matrix.java-version }}
           path: beibu-mall/**/target/site/jacoco/
