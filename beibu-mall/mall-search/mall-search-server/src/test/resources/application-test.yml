@@ -18,6 +18,7 @@ spring:
       - com.alibaba.cloud.nacos.discovery.NacosDiscoveryAutoConfiguration
       - com.alibaba.cloud.nacos.NacosServiceAutoConfiguration
       - com.alibaba.cloud.nacos.registry.NacosServiceRegistryAutoConfiguration
+      - org.apache.rocketmq.spring.autoconfigure.RocketMQAutoConfiguration
 
   elasticsearch:
     uris: localhost:9200
