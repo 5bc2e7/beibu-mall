@@ -115,10 +115,11 @@ jobs:
       # ------ 第 4 步：Maven 编译 + 测试 + 覆盖率检查 ------
       # mvn verify = 编译 + 跑测试 + JaCoCo 覆盖率检查 + 打包
       # -B 表示 batch 模式（非交互式，CI 里必须加）
-      # -Dtest='!SearchServiceTest' 只排除搜索服务的集成测试（需要 Elasticsearch）
-      # 其他集成测试（product, inventory, seckill）正常跑
+      # -Dtest 排除需要外部服务的集成测试
+      # SearchServiceTest - 需要 Elasticsearch
+      # SeckillServiceTest - 需要 Nacos（bootstrap 上下文无法完全禁用）
       - name: Build, Test & Check Coverage
-        run: mvn clean verify -B -Dtest='!SearchServiceTest' -Dsurefire.failIfNoSpecifiedTests=false
+        run: mvn clean verify -B -Dtest='!SearchServiceTest,!SeckillServiceTest' -Dsurefire.failIfNoSpecifiedTests=false
         working-directory: beibu-mall
 
       # ------ 第 5 步：上传测试报告（可选但推荐） ------
