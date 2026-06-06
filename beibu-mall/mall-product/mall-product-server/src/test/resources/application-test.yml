@@ -15,6 +15,10 @@ spring:
     password: root123456
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+  # 覆盖主配置的 Nacos config import，避免连接 Nacos
+  config:
+    import: ""
+
   # 彻底禁用 Nacos（测试环境不需要注册中心和配置中心）
   cloud:
     nacos:
