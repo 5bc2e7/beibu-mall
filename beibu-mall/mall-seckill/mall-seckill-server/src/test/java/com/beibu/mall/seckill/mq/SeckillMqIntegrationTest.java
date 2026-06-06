@@ -46,7 +46,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * - 这个测试会比较慢（容器启动需要时间），用 @Tag("integration") 标记
  * - 只在本地跑，CI 里可以用 -DexcludeGroups=integration 跳过
  */
-@SpringBootTest
+@SpringBootTest(properties = {
+        "spring.autoconfigure.exclude="
+})
 @ActiveProfiles("test")
 @Testcontainers
 @Tag("integration")
