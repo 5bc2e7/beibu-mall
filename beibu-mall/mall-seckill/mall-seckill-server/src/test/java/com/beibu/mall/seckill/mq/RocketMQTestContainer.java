@@ -45,9 +45,9 @@ public class RocketMQTestContainer extends GenericContainer<RocketMQTestContaine
                 "sh mqbroker -n localhost:" + NAMESRV_PORT;
         withCommand("sh", "-c", command);
 
-        // 等待 NameServer 启动成功
-        this.waitStrategy = Wait.forLogMessage(".*boot success.*", 1)
-                .withStartupTimeout(Duration.ofSeconds(90));
+        // 等待 NameServer 和 Broker 都启动成功（2 次 boot success）
+        this.waitStrategy = Wait.forLogMessage(".*boot success.*", 2)
+                .withStartupTimeout(Duration.ofSeconds(120));
     }
 
     @Override
@@ -69,11 +69,16 @@ public class RocketMQTestContainer extends GenericContainer<RocketMQTestContaine
         }
 
         // 等待 Broker 就绪
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+        Awaitility.await()
+                .atMost(30, TimeUnit.SECONDS)
+                .pollInterval(2, TimeUnit.SECONDS)
+                .until(() -> {
+                    ExecResult result = execInContainer(
+                            "sh", "mqadmin", "clusterList",
+                            "-n", "localhost:" + NAMESRV_PORT
+                    );
+                    return result.getExitCode() == 0 && result.getStdout() != null;
+                });
     }
 
     private String updateBrokerConfig(String key, Object value) {
