@@ -15,13 +15,23 @@ spring:
     password: root123456
     driver-class-name: com.mysql.cj.jdbc.Driver
 
-  # 禁用 Nacos（测试环境不需要）
+  # 彻底禁用 Nacos（测试环境不需要注册中心和配置中心）
   cloud:
     nacos:
+      server-addr: 127.0.0.1:8848
       discovery:
         enabled: false
+        register-enabled: false
       config:
         enabled: false
+        server-addr: 127.0.0.1:8848
+
+  # 排除 Nacos 自动配置，防止连接尝试
+  autoconfigure:
+    exclude:
+      - com.alibaba.cloud.nacos.discovery.NacosDiscoveryAutoConfiguration
+      - com.alibaba.cloud.nacos.NacosServiceAutoConfiguration
+      - com.alibaba.cloud.nacos.registry.NacosServiceRegistryAutoConfiguration
 
   # Redis 配置
   data:

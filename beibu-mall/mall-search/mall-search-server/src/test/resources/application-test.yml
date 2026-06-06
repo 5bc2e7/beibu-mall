@@ -4,10 +4,18 @@
 spring:
   cloud:
     nacos:
+      server-addr: 127.0.0.1:8848
       discovery:
         enabled: false
+        register-enabled: false
       config:
         enabled: false
+        server-addr: 127.0.0.1:8848
+  autoconfigure:
+    exclude:
+      - com.alibaba.cloud.nacos.discovery.NacosDiscoveryAutoConfiguration
+      - com.alibaba.cloud.nacos.NacosServiceAutoConfiguration
+      - com.alibaba.cloud.nacos.registry.NacosServiceRegistryAutoConfiguration
 
   elasticsearch:
     uris: localhost:9200
