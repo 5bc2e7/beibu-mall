@@ -28,12 +28,13 @@ spring:
         import-check:
           enabled: false
 
-  # 排除 Nacos 自动配置，防止连接尝试
+  # 排除不需要的自动配置
   autoconfigure:
     exclude:
       - com.alibaba.cloud.nacos.discovery.NacosDiscoveryAutoConfiguration
       - com.alibaba.cloud.nacos.NacosServiceAutoConfiguration
       - com.alibaba.cloud.nacos.registry.NacosServiceRegistryAutoConfiguration
+      - org.apache.rocketmq.spring.autoconfigure.RocketMQAutoConfiguration
 
   # Redis 配置
   data:
