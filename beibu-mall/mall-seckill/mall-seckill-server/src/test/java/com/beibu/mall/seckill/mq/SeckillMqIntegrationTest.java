@@ -10,6 +10,7 @@ import com.beibu.mall.seckill.service.SeckillService;
 import com.beibu.mall.seckill.vo.SeckillResultStatus;
 import com.beibu.mall.seckill.vo.SeckillResultVO;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -77,6 +78,9 @@ class SeckillMqIntegrationTest {
 
     @Autowired
     private SeckillOrderMapper seckillOrderMapper;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private static final Long ACTIVITY_ID = 2001L;
     private static final int STOCK = 5;
@@ -186,8 +190,9 @@ class SeckillMqIntegrationTest {
                 .pollInterval(2, TimeUnit.SECONDS)
                 .untilAsserted(() -> {
                     String resultKey = RedisKeyConstants.getResultKey(token);
-                    SeckillResultStatus resultStatus = (SeckillResultStatus) redisTemplate.opsForValue().get(resultKey);
-                    assertNotNull(resultStatus, "结果状态应该存在");
+                    Object cachedResult = redisTemplate.opsForValue().get(resultKey);
+                    assertNotNull(cachedResult, "结果状态应该存在");
+                    SeckillResultStatus resultStatus = objectMapper.convertValue(cachedResult, SeckillResultStatus.class);
                     assertEquals("SUCCESS", resultStatus.getStatus(), "结果状态应为 SUCCESS");
                     assertNotNull(resultStatus.getOrderId(), "应该有订单 ID");
                 });
