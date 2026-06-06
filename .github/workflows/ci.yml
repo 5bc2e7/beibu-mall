@@ -107,13 +107,11 @@ jobs:
       # ------ 第 4 步：Maven 编译 + 测试 + 覆盖率检查 ------
       # mvn verify = 编译 + 跑测试 + JaCoCo 覆盖率检查 + 打包
       # -B 表示 batch 模式（非交互式，CI 里必须加）
-      #
-      # 注意：不需要 -P test 或 SPRING_PROFILES_ACTIVE
-      # 因为集成测试类上已经有 @ActiveProfiles("test") 注解
-      # Spring 会自动读取 application-test.yml
+      # -DskipITs=true 跳过集成测试（需要 Nacos/Redis 等外部服务）
+      # 单元测试（Mockito）在 CI 里正常跑
       - name: Build, Test & Check Coverage
-        run: mvn clean verify -B
-        working-directory: beibu-mall  # Maven 项目在 beibu-mall 子目录
+        run: mvn clean verify -B -DskipITs=true
+        working-directory: beibu-mall
 
       # ------ 第 5 步：上传测试报告（可选但推荐） ------
       # 即使构建失败了（测试挂了），也把测试报告保存下来
