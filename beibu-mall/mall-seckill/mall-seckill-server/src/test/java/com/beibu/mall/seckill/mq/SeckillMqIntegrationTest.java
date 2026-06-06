@@ -105,9 +105,14 @@ class SeckillMqIntegrationTest {
         activity.setDeleted(0);
         seckillActivityMapper.insert(activity);
 
-        // 清理 Redis
+        // 清理 Redis（包括结果 key）
         redisTemplate.delete("seckill:stock:" + ACTIVITY_ID);
         redisTemplate.delete("seckill:bought:" + ACTIVITY_ID);
+        // 清理所有 seckill:result:* keys
+        Set<String> resultKeys = redisTemplate.keys("seckill:result:*");
+        if (resultKeys != null && !resultKeys.isEmpty()) {
+            redisTemplate.delete(resultKeys);
+        }
 
         // 预热库存
         seckillService.warmUpStock(ACTIVITY_ID);
