@@ -48,8 +48,10 @@ public class RocketMQTestContainer extends GenericContainer<RocketMQTestContaine
     @Override
     protected void containerIsStarted(InspectContainerResponse containerInfo) {
         // 关键：更新 brokerIP1 配置，让客户端能从外部连接
+        // brokerIP1 必须是主机地址，客户端会用这个地址连接 broker
         List<String> commands = new ArrayList<>();
         commands.add(updateBrokerConfig("brokerIP1", getHost()));
+        commands.add(updateBrokerConfig("listenPort", getMappedPort(BROKER_PORT)));
         commands.add(updateBrokerConfig("autoCreateTopicEnable", true));
         commands.add(updateBrokerConfig("brokerPermission", 6));
 
