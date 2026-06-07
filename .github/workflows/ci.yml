@@ -139,10 +139,10 @@ jobs:
       # ------ 第 4 步：Maven 编译 + 测试 + 覆盖率检查 ------
       # mvn verify = 编译 + 跑测试 + JaCoCo 覆盖率检查 + 打包
       # -B 表示 batch 模式（非交互式，CI 里必须加）
+      # -P ci-test 激活 CI 测试 Profile，排除 Nacos starter（从源头消除连接噪音）
       # Testcontainers 会在 CI 里自动启动 RocketMQ 容器，跑完自动销毁
-      # 已删除 spring-cloud-starter-bootstrap，所有集成测试都可以跑了
       - name: Build, Test & Check Coverage
-        run: mvn clean verify -B -Dsurefire.failIfNoSpecifiedTests=false
+        run: mvn clean verify -B -P ci-test -Dsurefire.failIfNoSpecifiedTests=false
         working-directory: beibu-mall
 
       # ------ 第 5 步：上传测试报告（可选但推荐） ------
