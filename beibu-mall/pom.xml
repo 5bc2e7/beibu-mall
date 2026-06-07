@@ -257,4 +257,36 @@
             </plugin>
         </plugins>
     </build>
+
+    <!-- ==================== Profile 配置 ==================== -->
+    <profiles>
+        <!-- CI 测试 Profile：排除 Nacos starter，从源头消除连接噪音 -->
+        <!-- 本地开发不需要激活此 Profile -->
+        <!-- CI 中通过 mvn verify -P ci-test 激活 -->
+        <profile>
+            <id>ci-test</id>
+            <properties>
+                <!-- 跳过 Nacos 相关的自动配置 -->
+                <skipNacosConfig>true</skipNacosConfig>
+                <skipNacosDiscovery>true</skipNacosDiscovery>
+            </properties>
+            <dependencyManagement>
+                <dependencies>
+                    <!-- 将 Nacos starter 设为 provided，测试时不可用 -->
+                    <dependency>
+                        <groupId>com.alibaba.cloud</groupId>
+                        <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+                        <version>${spring-cloud-alibaba.version}</version>
+                        <scope>provided</scope>
+                    </dependency>
+                    <dependency>
+                        <groupId>com.alibaba.cloud</groupId>
+                        <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+                        <version>${spring-cloud-alibaba.version}</version>
+                        <scope>provided</scope>
+                    </dependency>
+                </dependencies>
+            </dependencyManagement>
+        </profile>
+    </profiles>
 </project>
