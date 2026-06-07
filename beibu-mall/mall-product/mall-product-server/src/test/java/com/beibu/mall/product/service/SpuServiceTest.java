@@ -44,6 +44,7 @@ import static org.mockito.Mockito.doAnswer;
  * - 上架/下架商品
  */
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("unchecked")  // LambdaQueryWrapper 是泛型，Mockito.any() 无法推断类型
 class SpuServiceTest {
 
     @Mock
