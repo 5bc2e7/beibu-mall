@@ -6,10 +6,10 @@
         </encoder>
     </appender>
 
-    <!-- 抑制订单状态/库存失败/补偿任务日志（测试中预期的行为） -->
-    <logger name="com.beibu.mall.order.service.OrderTransactionService" level="OFF"/>
-    <logger name="com.beibu.mall.order.service.impl.OrderServiceImpl" level="OFF"/>
-    <logger name="com.beibu.mall.order.compensation.OrderCompensationTask" level="OFF"/>
+    <!-- 抑制 LoadBalancer Caffeine 缓存建议（生产建议，测试无需关注） -->
+    <logger name="org.springframework.cloud.loadbalancer" level="ERROR"/>
+    <!-- 抑制商品同步消息处理日志（测试中预期的行为） -->
+    <logger name="com.beibu.mall.search.mq.ProductSyncConsumer" level="OFF"/>
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
