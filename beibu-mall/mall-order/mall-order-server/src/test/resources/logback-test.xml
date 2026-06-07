@@ -7,9 +7,9 @@
     </appender>
 
     <!-- 抑制订单状态/库存失败/补偿任务日志（测试中预期的行为） -->
-    <logger name="com.beibu.mall.order.service.OrderTransactionService" level="OFF"/>
-    <logger name="com.beibu.mall.order.service.impl.OrderServiceImpl" level="OFF"/>
-    <logger name="com.beibu.mall.order.compensation.OrderCompensationTask" level="OFF"/>
+    <logger name="com.beibu.mall.order.service.OrderTransactionService" level="ERROR"/>
+    <logger name="com.beibu.mall.order.service.impl.OrderServiceImpl" level="ERROR"/>
+    <logger name="com.beibu.mall.order.compensation.OrderCompensationTask" level="ERROR"/>
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
