@@ -54,6 +54,7 @@ import static org.mockito.Mockito.*;
  * @ExtendWith(MockitoExtension.class)：启用 Mockito 框架
  */
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("unchecked")  // LambdaQueryWrapper 是泛型，Mockito.any() 无法推断类型
 class OrderServiceTest {
 
     /**

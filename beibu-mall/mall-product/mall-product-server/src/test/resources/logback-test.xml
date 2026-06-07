@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 抑制业务降级日志（测试中预期的行为） -->
+    <logger name="com.beibu.mall.product.service.impl.SpuServiceImpl" level="ERROR"/>
+    <!-- 抑制 LoadBalancer Caffeine 缓存建议（生产建议，测试无需关注） -->
+    <logger name="org.springframework.cloud.loadbalancer" level="ERROR"/>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>

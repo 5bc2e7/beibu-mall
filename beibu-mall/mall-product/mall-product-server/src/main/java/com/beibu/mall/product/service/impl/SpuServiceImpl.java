@@ -446,7 +446,9 @@ public class SpuServiceImpl implements SpuService {
         if (categoryIds == null || categoryIds.isEmpty()) {
             return java.util.Collections.emptyMap();
         }
-        List<Category> categories = categoryMapper.selectBatchIds(categoryIds);
+        LambdaQueryWrapper<Category> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(Category::getId, categoryIds);
+        List<Category> categories = categoryMapper.selectList(wrapper);
         return categories.stream()
                 .collect(Collectors.toMap(Category::getId, Category::getName));
     }
