@@ -38,6 +38,11 @@ spring:
         server-addr: 127.0.0.1:8848
         import-check:
           enabled: false
+    service-registry:
+      auto-registration:
+        enabled: false
+    discovery:
+      enabled: false
 
   # 排除 Nacos 自动配置，防止连接尝试
   autoconfigure:
@@ -45,6 +50,11 @@ spring:
       - com.alibaba.cloud.nacos.discovery.NacosDiscoveryAutoConfiguration
       - com.alibaba.cloud.nacos.NacosServiceAutoConfiguration
       - com.alibaba.cloud.nacos.registry.NacosServiceRegistryAutoConfiguration
+      - com.alibaba.cloud.nacos.NacosConfigAutoConfiguration
+      - com.alibaba.cloud.nacos.NacosConfigSpringCloudAutoConfiguration
+      - com.alibaba.cloud.nacos.endpoint.NacosConfigEndpointAutoConfiguration
+      - com.alibaba.cloud.nacos.endpoint.NacosDiscoveryEndpointAutoConfiguration
+      - org.apache.rocketmq.spring.autoconfigure.RocketMQAutoConfiguration
 
 # MyBatis-Plus 配置
 mybatis-plus:
@@ -59,7 +69,10 @@ mybatis-plus:
       logic-delete-value: 1
       logic-not-delete-value: 0
 
-# 日志配置
+# 日志配置：抑制 Nacos 客户端噪音
 logging:
   level:
     com.beibu.mall.product: debug
+    com.alibaba.nacos: WARN
+    com.alibaba.nacos.common.remote.client: ERROR
+    com.alibaba.nacos.client.config: ERROR

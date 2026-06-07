@@ -13,11 +13,20 @@ spring:
         server-addr: 127.0.0.1:8848
         import-check:
           enabled: false
+    service-registry:
+      auto-registration:
+        enabled: false
+    discovery:
+      enabled: false
   autoconfigure:
     exclude:
       - com.alibaba.cloud.nacos.discovery.NacosDiscoveryAutoConfiguration
       - com.alibaba.cloud.nacos.NacosServiceAutoConfiguration
       - com.alibaba.cloud.nacos.registry.NacosServiceRegistryAutoConfiguration
+      - com.alibaba.cloud.nacos.NacosConfigAutoConfiguration
+      - com.alibaba.cloud.nacos.NacosConfigSpringCloudAutoConfiguration
+      - com.alibaba.cloud.nacos.endpoint.NacosConfigEndpointAutoConfiguration
+      - com.alibaba.cloud.nacos.endpoint.NacosDiscoveryEndpointAutoConfiguration
       - org.apache.rocketmq.spring.autoconfigure.RocketMQAutoConfiguration
 
   elasticsearch:
@@ -37,3 +46,6 @@ spring:
 logging:
   level:
     com.beibu.mall.search: debug
+    com.alibaba.nacos: WARN
+    com.alibaba.nacos.common.remote.client: ERROR
+    com.alibaba.nacos.client.config: ERROR

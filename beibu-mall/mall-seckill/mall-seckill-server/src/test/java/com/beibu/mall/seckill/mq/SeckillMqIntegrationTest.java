@@ -53,7 +53,11 @@ import static org.junit.jupiter.api.Assertions.*;
         "spring.autoconfigure.exclude=" +
                 "com.alibaba.cloud.nacos.discovery.NacosDiscoveryAutoConfiguration," +
                 "com.alibaba.cloud.nacos.NacosServiceAutoConfiguration," +
-                "com.alibaba.cloud.nacos.registry.NacosServiceRegistryAutoConfiguration"
+                "com.alibaba.cloud.nacos.registry.NacosServiceRegistryAutoConfiguration," +
+                "com.alibaba.cloud.nacos.NacosConfigAutoConfiguration," +
+                "com.alibaba.cloud.nacos.NacosConfigSpringCloudAutoConfiguration," +
+                "com.alibaba.cloud.nacos.endpoint.NacosConfigEndpointAutoConfiguration," +
+                "com.alibaba.cloud.nacos.endpoint.NacosDiscoveryEndpointAutoConfiguration"
 })
 @ActiveProfiles("test")
 @Testcontainers
