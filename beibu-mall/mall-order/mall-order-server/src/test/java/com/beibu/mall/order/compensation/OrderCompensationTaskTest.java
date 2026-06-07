@@ -37,6 +37,7 @@ import static org.mockito.Mockito.*;
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("订单补偿任务测试")
+@SuppressWarnings("unchecked")  // LambdaQueryWrapper 是泛型，Mockito.any() 无法推断类型
 class OrderCompensationTaskTest {
 
     @Mock

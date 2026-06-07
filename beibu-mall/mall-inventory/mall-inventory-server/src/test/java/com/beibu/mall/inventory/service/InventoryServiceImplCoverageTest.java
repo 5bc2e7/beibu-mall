@@ -31,6 +31,7 @@ import static org.mockito.Mockito.*;
  * - saveInventoryLog 流水记录验证
  */
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("unchecked")  // LambdaQueryWrapper 是泛型，Mockito.any() 无法推断类型
 class InventoryServiceImplCoverageTest {
 
     private static final String TEST_SKU = "SKU_001";

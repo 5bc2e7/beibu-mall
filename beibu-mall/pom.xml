@@ -167,6 +167,13 @@
                 <artifactId>redisson-spring-boot-starter</artifactId>
                 <version>${redisson.version}</version>
             </dependency>
+
+            <!-- Javassist：版本管理（解决 3.21.0-GA 模型警告） -->
+            <dependency>
+                <groupId>org.javassist</groupId>
+                <artifactId>javassist</artifactId>
+                <version>3.30.2-GA</version>
+            </dependency>
         </dependencies>
 </dependencyManagement>
 
@@ -177,6 +184,14 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>  <!-- provided = 编译时需要，运行时不需要（由 IDE 提供） -->
+        </dependency>
+
+        <!-- 排除 commons-logging，避免与 spring-jcl 冲突 -->
+        <dependency>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+            <version>1.2</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
@@ -280,6 +295,12 @@
                                 <classpathDependencyExclude>com.alibaba.nacos:nacos-client</classpathDependencyExclude>
                                 <classpathDependencyExclude>com.alibaba.nacos:nacos-client-basic</classpathDependencyExclude>
                             </classpathDependencyExcludes>
+                            <!-- JVM 参数：抑制 Mockito/JVM 警告 -->
+                            <argLine>
+                                -XX:+EnableDynamicAgentLoading
+                                -Xshare:off
+                                ${argLine}
+                            </argLine>
                         </configuration>
                     </plugin>
                 </plugins>

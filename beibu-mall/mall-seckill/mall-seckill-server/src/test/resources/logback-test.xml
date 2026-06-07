@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 抑制秒杀业务日志（测试中预期的行为） -->
+    <logger name="com.beibu.mall.seckill.mq.SeckillMessageConsumer" level="OFF"/>
+    <logger name="com.beibu.mall.seckill.mq.OrderTimeoutConsumer" level="OFF"/>
+    <logger name="com.beibu.mall.seckill.service.impl.SeckillServiceImpl" level="OFF"/>
+    <!-- 抑制调度器库存同步日志（测试中预期的行为） -->
+    <logger name="com.beibu.mall.seckill.config.SeckillScheduler" level="OFF"/>
+    <!-- 抑制 LoadBalancer Caffeine 缓存建议（生产建议，测试无需关注） -->
+    <logger name="org.springframework.cloud.loadbalancer" level="ERROR"/>
+    <!-- 抑制 RocketMQ BeanPostProcessor 警告（已知兼容性问题） -->
+    <logger name="org.springframework.context.support.PostProcessorRegistrationDelegate" level="ERROR"/>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>

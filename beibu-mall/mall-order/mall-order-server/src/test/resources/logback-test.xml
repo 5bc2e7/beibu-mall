@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 抑制订单状态/库存失败/补偿任务日志（测试中预期的行为） -->
+    <logger name="com.beibu.mall.order.service.OrderTransactionService" level="OFF"/>
+    <logger name="com.beibu.mall.order.service.impl.OrderServiceImpl" level="OFF"/>
+    <logger name="com.beibu.mall.order.compensation.OrderCompensationTask" level="OFF"/>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>
